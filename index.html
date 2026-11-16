@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zona Main & Belajar SD - 20 Mini-Game Edukasi</title>
+  <!-- Tailwind CSS via CDN untuk tata letak responsif cepat & modern -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Fredoka & Nunito untuk nuansa ramah anak dan mudah dibaca -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* Gaya Dasar & Tema Ramah Anak (Poki/Friv Style) */
+    :root {
+      --bg-sky: #e0f2fe;
+      --primary: #3b82f6;
+      --accent: #f59e0b;
+    }
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: radial-gradient(circle at top left, #fef9c3 0%, #e0f2fe 45%, #ede9fe 100%);
+      min-height: 100vh;
+      color: #1e293b;
+      overflow-x: hidden;
+      user-select: none;
+    }
+    h1, h2, h3, .font-display {
+      font-family: 'Fredoka', sans-serif;
+    }
+    /* Efek Tombol 3D Ceria */
+    .btn-3d {
+      transition: all 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 5px 0 rgba(0, 0, 0, 0.18);
+    }
+    .btn-3d:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.04);
+    }
+    .btn-3d:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
+    }
+    /* Animasi Kartu Game */
+    .game-card {
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+    }
+    .game-card:hover {
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 0 14px 25px -5px rgba(59, 130, 246, 0.25);
+    }
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+    .animate-float {
+      animation: floatSlow 3s ease-in-out infinite;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+    .animate-shake {
+      animation: shake 0.3s ease-in-out;
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-pop {
+      animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #93c5fd; border-radius: 9999px; }
+  </style>
+</head>
+<body class="antialiased">
+
+  <!-- ==================== VIEW 1: PORTAL UTAMA ==================== -->
+  <div id="portal-view" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    
+    <!-- Header Portal -->
+    <header class="bg-white/90 backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-lg border-4 border-sky-200 mb-6">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <!-- Logo & Judul -->
+        <div class="flex items-center gap-4">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-pink-500 flex items-center justify-center text-4xl shadow-md animate-float shrink-0">
+            🚀
+          </div>
+          <div>
+            <div class="inline-block px-3 py-0.5 rounded-full bg-sky-100 text-sky-700 text-xs font-extrabold tracking-wide uppercase mb-1">
+              Kelas 4 • 5 • 6 SD
+            </div>
+            <h1 class="text-2xl sm:text-4xl font-bold text-slate-800 tracking-tight">
+              Zona Main & Belajar SD
+            </h1>
+            <p class="text-sm text-slate-500 font-semibold">20 Petualangan Game Edukasi Seru & Interaktif!</p>
+          </div>
+        </div>
+
+        <!-- Statistik Bintang & Pencarian -->
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <!-- Kotak Total Bintang -->
+          <div class="bg-gradient-to-r from-amber-100 to-yellow-100 border-2 border-amber-300 rounded-2xl px-4 py-2.5 flex items-center justify-between sm:justify-center gap-3 shadow-sm">
+            <span class="text-3xl">⭐</span>
+            <div>
+              <div class="text-xs font-bold text-amber-800 uppercase">Total Bintangmu</div>
+              <div class="text-xl font-display font-bold text-amber-600"><span id="total-stars">0</span> / 60 Bintang</div>
+            </div>
+            <button onclick="toggleSound()" id="sound-toggle-btn" title="Suara Efek" class="ml-2 w-10 h-10 rounded-xl bg-white border-2 border-amber-300 flex items-center justify-center text-lg hover:bg-amber-50">
+              🔊
+            </button>
+          </div>
+
+          <!-- Kolom Pencarian -->
+          <div class="relative flex-1 sm:w-64">
+            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-lg">🔍</span>
+            <input 
+              type="text" 
+              id="search-input" 
+              placeholder="Cari nama game..." 
+              oninput="renderGameGrid()"
+              class="w-full pl-11 pr-4 py-3 rounded-2xl border-2 border-slate-200 focus:border-sky-400 focus:outline-none font-bold text-slate-700 bg-slate-50 focus:bg-white transition"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Kategori -->
+      <div class="mt-5 pt-4 border-t-2 border-slate-100 flex flex-wrap gap-2" id="category-filters">
+        <button data-cat="Semua" onclick="setCategory('Semua')" class="cat-btn btn-3d px-4 py-2 rounded-2xl font-display font-bold text-sm bg-sky-500 text-white">
+          🌈 Semua (20)
+        </button>
+        <button data-cat="Matematika" onclick="setCategory('Matematika')" class="cat-btn btn-3d px-4 py-2 rounded-2xl font-display font-bold text-sm bg-white text-slate-700 border-2 border-slate-200">
+          🔢 Matematika (5)
+        </button>
+        <button data-cat="IPA" onclick="setCategory('IPA')" class="cat-btn btn-3d px-4 py-2 rounded-2xl font-display font-bold text-sm bg-white text-slate-700 border-2 border-slate-200">
+          🔬 IPA (5)
+        </button>
+        <button data-cat="Bahasa" onclick="setCategory('Bahasa')" class="cat-btn btn-3d px-4 py-2 rounded-2xl font-display font-bold text-sm bg-white text-slate-700 border-2 border-slate-200">
+          📚 Bahasa (4)
+        </button>
+        <button data-cat="IPS & Budaya" onclick="setCategory('IPS & Budaya')" class="cat-btn btn-3d px-4 py-2 rounded-2xl font-display font-bold text-sm bg-white text-slate-700 border-2 border-slate-200">
+          🗺️ IPS & Budaya (3)
+        </button>
+        <button data-cat="Ketangkasan" onclick="setCategory('Ketangkasan')" class="cat-btn btn-3d px-4 py-2 rounded-2xl font-display font-bold text-sm bg-white text-slate-700 border-2 border-slate-200">
+          ⚡ Ketangkasan & Logika (3)
+        </button>
+      </div>
+    </header>
+
+    <!-- Grid Kartu 20 Game -->
+    <main id="games-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+      <!-- Kartu dirender lewat JavaScript -->
+    </main>
+
+    <!-- Footer Portal -->
+    <footer class="mt-12 text-center text-slate-500 text-sm font-bold pb-6">
+      ✨ Belajar sambil bermain jadi lebih seru! Semua skor & bintang tersimpan otomatis di perangkatmu.
+    </footer>
+  </div>
+
+  <!-- ==================== VIEW 2: ARENA BERMAIN FULLSCREEN ==================== -->
+  <div id="arena-view" class="hidden fixed inset-0 z-50 bg-gradient-to-b from-sky-100 via-indigo-50 to-purple-100 flex flex-col overflow-y-auto">
+    
+    <!-- Top Bar Arena -->
+    <div class="bg-white/95 backdrop-blur-md border-b-4 border-sky-200 px-4 py-3 sticky top-0 z-20 shadow-sm">
+      <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-2">
+        <button onclick="exitToMenu()" class="btn-3d bg-rose-500 hover:bg-rose-600 text-white font-display font-bold px-4 py-2 rounded-2xl text-sm sm:text-base flex items-center gap-2">
+          ⬅ Kembali ke Menu Utama
+        </button>
+
+        <div class="flex items-center gap-2">
+          <span id="arena-icon" class="text-2xl">🎮</span>
+          <h2 id="arena-title" class="font-display font-bold text-lg sm:text-xl text-slate-800 truncate max-w-[200px] sm:max-w-xs">Judul Game</h2>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <!-- Nyawa -->
+          <div class="bg-rose-50 border-2 border-rose-200 px-3 py-1.5 rounded-2xl font-bold text-base sm:text-lg" id="arena-lives">
+            ❤️❤️❤️
+          </div>
+          <!-- Skor -->
+          <div class="bg-amber-50 border-2 border-amber-300 px-4 py-1.5 rounded-2xl font-display font-bold text-amber-700 text-base sm:text-lg">
+            Skor: <span id="arena-score">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kontainer Utama Permainan -->
+    <div class="flex-1 max-w-4xl w-full mx-auto px-4 py-6 flex flex-col justify-center">
+      <!-- Progress Ronde -->
+      <div class="mb-4 bg-white/80 rounded-2xl p-3 border-2 border-sky-200 shadow-sm">
+        <div class="flex justify-between text-xs sm:text-sm font-extrabold text-slate-600 mb-1.5">
+          <span id="arena-round-label">Ronde 1 dari 8</span>
+          <span id="arena-feedback-mini" class="text-sky-600">Semangat! Kamu pasti bisa!</span>
+        </div>
+        <div class="w-full h-3.5 bg-slate-200 rounded-full overflow-hidden">
+          <div id="arena-progress-bar" class="h-full bg-gradient-to-r from-sky-400 to-emerald-400 transition-all duration-300 rounded-full" style="width: 10%"></div>
+        </div>
+      </div>
+
+      <!-- Kanvas Interaktif Game -->
+      <div id="game-stage" class="bg-white rounded-3xl shadow-xl border-4 border-sky-200 p-5 sm:p-8 min-h-[420px] flex flex-col justify-between relative overflow-hidden">
+        <!-- Konten game dinamis masuk di sini -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL HASIL AKHIR GAME ==================== -->
+  <div id="result-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 text-center border-4 border-amber-300 shadow-2xl animate-pop">
+      <div id="result-emoji" class="text-6xl mb-3">🏆</div>
+      <h3 id="result-heading" class="font-display font-bold text-2xl sm:text-3xl text-slate-800 mb-2">Hebat Sekali!</h3>
+      <p id="result-message" class="text-slate-600 font-bold mb-5 text-sm sm:text-base">Kamu menyelesaikan tantangan dengan luar biasa!</p>
+      
+      <!-- Bintang Diperoleh -->
+      <div id="result-stars" class="text-4xl tracking-widest mb-4">⭐⭐⭐</div>
+      
+      <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl p-4 mb-6">
+        <div class="text-xs font-extrabold text-sky-700 uppercase">Skor Akhir Kamu</div>
+        <div id="result-final-score" class="font-display font-bold text-4xl text-sky-600">100</div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3">
+        <button onclick="replayCurrentGame()" class="btn-3d flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-display font-bold py-3 px-4 rounded-2xl text-base">
+          🔄 Main Lagi
+        </button>
+        <button onclick="closeModalAndMenu()" class="btn-3d flex-1 bg-sky-500 hover:bg-sky-600 text-white font-display font-bold py-3 px-4 rounded-2xl text-base">
+          🏠 Menu Utama
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== JAVASCRIPT UTAMA & 20 MINI-GAME ==================== -->
+  <script>
+    /* ========================================================================
+       1. SISTEM AUDIO CERIA (WEB AUDIO API TANPA FILE EKSTERNAL)
+       ======================================================================== */
+    let audioCtx = null;
+    let soundEnabled = true;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('sound-toggle-btn').textContent = soundEnabled ? '🔊' : '🔇';
+      if (soundEnabled) playSound('click');
+    }
+
+    function playSound(type) {
+      if (!soundEnabled) return;
+      try {
+        initAudio();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'click') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(780, now + 0.08);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        } else if (type === 'correct') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, now); // C5
+          osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+          osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+          gain.gain.setValueAtTime(0.22, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.32);
+          osc.start(now);
+          osc.stop(now + 0.32);
+        } else if (type === 'wrong') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.linearRampToValueAtTime(140, now + 0.25);
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.26);
+          osc.start(now);
+          osc.stop(now + 0.26);
+        } else if (type === 'win') {
+          const notes = [523.25, 659.25, 783.99, 1046.50];
+          notes.forEach((freq, idx) => {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.type = 'triangle';
+            o.connect(g);
+            g.connect(audioCtx.destination);
+            o.frequency.setValueAtTime(freq, now + idx * 0.1);
+            g.gain.setValueAtTime(0.2, now + idx * 0.1);
+            g.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.1 + 0.25);
+            o.start(now + idx * 0.1);
+            o.stop(now + idx * 0.1 + 0.25);
+          });
+        }
+      } catch (e) { /* Abaikan jika browser membatasi audio awal */ }
+    }
+
+    /* ========================================================================
+       2. PENYIMPANAN SKOR & BINTANG (LOCALSTORAGE)
+       ======================================================================== */
+    const STORAGE_KEY = 'zona_belajar_sd_progress_v1';
+    let userProgress = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+
+    function saveGameProgress(gameId, score, maxScore) {
+      const ratio = score / maxScore;
+      let stars = 0;
+      if (ratio >= 0.85) stars = 3;
+      else if (ratio >= 0.55) stars = 2;
+      else if (score > 0) stars = 1;
+
+      const prev = userProgress[gameId] || { stars: 0, highScore: 0 };
+      userProgress[gameId] = {
+        stars: Math.max(prev.stars, stars),
+        highScore: Math.max(prev.highScore, score)
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(userProgress));
+      updateTotalStarsUI();
+      return stars;
+    }
+
+    function updateTotalStarsUI() {
+      let total = 0;
+      Object.values(userProgress).forEach(item => total += (item.stars || 0));
+      document.getElementById('total-stars').textContent = total;
+    }
+
+    /* ========================================================================
+       3. DATA KATALOG 20 MINI-GAME
+       ======================================================================== */
+    const GAMES_CATALOG = [
+      // Matematika (1-5)
+      { id: 1, title: 'Petualangan Pecahan & Desimal', cat: 'Matematika', icon: '☄️', color: 'from-blue-400 to-indigo-500', desc: 'Tembak meteor pecahan & desimal senilai!' },
+      { id: 2, title: 'Kasir Kantin Sekolah', cat: 'Matematika', icon: '🍱', color: 'from-amber-400 to-orange-500', desc: 'Hitung total jajanan & uang kembalian tepat.' },
+      { id: 3, title: 'Labirin Perkalian & Pembagian', cat: 'Matematika', icon: '🏰', color: 'from-emerald-400 to-teal-500', desc: 'Buka gerbang labirin menuju garis finis!' },
+      { id: 4, title: 'Arsitek Bangun Datar', cat: 'Matematika', icon: '📐', color: 'from-cyan-400 to-blue-500', desc: 'Hitung luas & keliling bangun datar.' },
+      { id: 5, title: 'Detektif Pola Angka', cat: 'Matematika', icon: '🔐', color: 'from-violet-400 to-purple-600', desc: 'Pecahkan kode deret angka brankas rahasia!' },
+      // IPA (6-10)
+      { id: 6, title: 'Pahlawan Pilah Sampah', cat: 'IPA', icon: '♻️', color: 'from-green-400 to-emerald-600', desc: 'Pilah sampah Organik, Anorganik & B3!' },
+      { id: 7, title: 'Jelajah Tata Surya', cat: 'IPA', icon: '🪐', color: 'from-indigo-500 to-purple-700', desc: 'Tebak planet berdasarkan ciri & urutannya.' },
+      { id: 8, title: 'Rantai Makanan Hutan', cat: 'IPA', icon: '🦁', color: 'from-lime-500 to-green-600', desc: 'Susun urutan ekosistem hutan yang tepat!' },
+      { id: 9, title: 'Kuis Perubahan Wujud Benda', cat: 'IPA', icon: '🧊', color: 'from-sky-400 to-cyan-600', desc: 'Mencair, membeku, menguap, mengembun!' },
+      { id: 10, title: 'Penjaga Tubuh Manusia', cat: 'IPA', icon: '🫀', color: 'from-rose-400 to-red-600', desc: 'Jawab fungsi organ & lawan kuman penyakit!' },
+      // Bahasa (11-14)
+      { id: 11, title: 'Pemburu Kata Baku & EYD', cat: 'Bahasa', icon: '🎯', color: 'from-fuchsia-500 to-pink-600', desc: 'Tangkap kata baku sesuai KBBI!' },
+      { id: 12, title: 'Tebak Peribahasa & Pantun', cat: 'Bahasa', icon: '📜', color: 'from-amber-500 to-yellow-600', desc: 'Lengkapi sampiran/isi pantun & peribahasa.' },
+      { id: 13, title: 'Supermarket Rush (English)', cat: 'Bahasa', icon: '🛒', color: 'from-teal-400 to-emerald-600', desc: 'Belanja barang sesuai daftar Bahasa Inggris!' },
+      { id: 14, title: 'Susun Kalimat Ajaib (Grammar)', cat: 'Bahasa', icon: '🪄', color: 'from-purple-500 to-indigo-600', desc: 'Rangkai kata acak menjadi kalimat Inggris.' },
+      // IPS & Budaya (15-17)
+      { id: 15, title: 'Petualang Nusantara', cat: 'IPS & Budaya', icon: '🏝️', color: 'from-orange-400 to-red-500', desc: 'Tebak rumah adat, tarian & kuliner daerah.' },
+      { id: 16, title: 'Jejak Pahlawan Nasional', cat: 'IPS & Budaya', icon: '🇮🇩', color: 'from-red-500 to-rose-700', desc: 'Kuis sejarah perjuangan pahlawan Indonesia.' },
+      { id: 17, title: 'Pengusaha Cilik', cat: 'IPS & Budaya', icon: '🧃', color: 'from-yellow-400 to-amber-500', desc: 'Atur modal & harga jual agar untung!' },
+      // Ketangkasan & Logika (18-20)
+      { id: 18, title: 'Ketik Cepat Ceria', cat: 'Ketangkasan', icon: '🎈', color: 'from-pink-400 to-rose-500', desc: 'Ketik kata sebelum balon terbang tinggi!' },
+      { id: 19, title: 'Memory Card Nusantara', cat: 'Ketangkasan', icon: '🥁', color: 'from-indigo-400 to-blue-600', desc: 'Cocokkan 12 kartu alat musik & daerahnya.' },
+      { id: 20, title: 'Awas Hoaks & Internet Aman', cat: 'Ketangkasan', icon: '🛡️', color: 'from-cyan-500 to-teal-600', desc: 'Jadilah jagoan internet sehat & aman!' }
+    ];
+
+    let activeCategory = 'Semua';
+
+    function setCategory(cat) {
+      playSound('click');
+      activeCategory = cat;
+      document.querySelectorAll('.cat-btn').forEach(btn => {
+        if (btn.dataset.cat === cat) {
+          btn.className = 'cat-btn btn-3d px-4 py-2 rounded-2xl font-display font-bold text-sm bg-sky-500 text-white';
+        } else {
+          btn.className = 'cat-btn btn-3d px-4 py-2 rounded-2xl font-display font-bold text-sm bg-white text-slate-700 border-2 border-slate-200';
+        }
+      });
+      renderGameGrid();
+    }
+
+    function renderGameGrid() {
+      const grid = document.getElementById('games-grid');
+      const query = document.getElementById('search-input').value.toLowerCase().trim();
+      
+      const filtered = GAMES_CATALOG.filter(g => {
+        const matchCat = activeCategory === 'Semua' || g.cat === activeCategory;
+        const matchQuery = g.title.toLowerCase().includes(query) || g.desc.toLowerCase().includes(query);
+        return matchCat && matchQuery;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full bg-white rounded-3xl p-10 text-center border-4 border-dashed border-sky-200">
+            <div class="text-5xl mb-3">🧐</div>
+            <h3 class="font-display font-bold text-xl text-slate-700">Game tidak ditemukan</h3>
+            <p class="text-slate-500 font-semibold">Coba kata kunci lain atau pilih kategori "Semua" ya!</p>
+          </div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(game => {
+        const prog = userProgress[game.id] || { stars: 0, highScore: 0 };
+        const starDisplay = '⭐'.repeat(prog.stars) + '☆'.repeat(3 - prog.stars);
+        return `
+          <div onclick="launchGame(${game.id})" class="game-card cursor-pointer bg-white rounded-3xl p-4 border-4 border-white shadow-md flex flex-col justify-between relative overflow-hidden group">
+            <div>
+              <div class="h-28 rounded-2xl bg-gradient-to-br ${game.color} flex items-center justify-center text-6xl shadow-inner mb-3 group-hover:scale-105 transition-transform">
+                ${game.icon}
+              </div>
+              <div class="flex items-center justify-between gap-1 mb-1.5">
+                <span class="text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                  ${game.cat}
+                </span>
+                <span class="text-sm font-bold text-amber-500 tracking-tighter" title="Bintang Tertinggi">
+                  ${starDisplay}
+                </span>
+              </div>
+              <h3 class="font-display font-bold text-lg text-slate-800 leading-snug mb-1">
+                ${game.id}. ${game.title}
+              </h3>
+              <p class="text-xs text-slate-500 font-semibold leading-relaxed mb-3">
+                ${game.desc}
+              </p>
+            </div>
+            <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-xs font-extrabold text-slate-400">Rekor: ${prog.highScore}</span>
+              <span class="btn-3d bg-sky-500 group-hover:bg-amber-500 text-white font-display font-bold text-xs px-3.5 py-1.5 rounded-xl">
+                MAIN ▶
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* ========================================================================
+       4. ENGINE ARENA PERMAINAN & KONTROL STATE GLOBAL
+       ======================================================================== */
+    let currentGame = null;
+    let gameState = {
+      score: 0,
+      lives: 3,
+      round: 0,
+      totalRounds: 8,
+      locked: false,
+      timerId: null
+    };
+
+    function clearGameTimers() {
+      if (gameState.timerId) {
+        clearInterval(gameState.timerId);
+        clearTimeout(gameState.timerId);
+        gameState.timerId = null;
+      }
+    }
+
+    function launchGame(gameId) {
+      playSound('click');
+      clearGameTimers();
+      currentGame = GAMES_CATALOG.find(g => g.id === gameId);
+      if (!currentGame) return;
+
+      gameState = {
+        score: 0,
+        lives: 3,
+        round: 0,
+        totalRounds: 8,
+        locked: false,
+        timerId: null
+      };
+
+      document.getElementById('portal-view').classList.add('hidden');
+      document.getElementById('result-modal').classList.add('hidden');
+      document.getElementById('arena-view').classList.remove('hidden');
+
+      document.getElementById('arena-icon').textContent = currentGame.icon;
+      document.getElementById('arena-title').textContent = currentGame.title;
+      updateArenaHUD();
+
+      // Mulai logika spesifik masing-masing game
+      GAME_ENGINES[gameId]();
+    }
+
+    function exitToMenu() {
+      playSound('click');
+      clearGameTimers();
+      document.getElementById('arena-view').classList.add('hidden');
+      document.getElementById('result-modal').classList.add('hidden');
+      document.getElementById('portal-view').classList.remove('hidden');
+      renderGameGrid();
+    }
+
+    function replayCurrentGame() {
+      if (currentGame) launchGame(currentGame.id);
+    }
+
+    function closeModalAndMenu() {
+      exitToMenu();
+    }
+
+    function updateArenaHUD() {
+      document.getElementById('arena-score').textContent = gameState.score;
+      const hearts = '❤️'.repeat(Math.max(0, gameState.lives)) + '🖤'.repeat(Math.max(0, 3 - gameState.lives));
+      document.getElementById('arena-lives').textContent = hearts;
+      const displayRound = Math.min(gameState.round + 1, gameState.totalRounds);
+      document.getElementById('arena-round-label').textContent = `Ronde ${displayRound} dari ${gameState.totalRounds}`;
+      const pct = Math.min(100, Math.round((gameState.round / gameState.totalRounds) * 100));
+      document.getElementById('arena-progress-bar').style.width = `${pct}%`;
+    }
+
+    function setMiniFeedback(text, isGood = true) {
+      const el = document.getElementById('arena-feedback-mini');
+      el.textContent = text;
+      el.className = isGood ? 'text-emerald-600 font-extrabold' : 'text-rose-600 font-extrabold';
+    }
+
+    function handleAnswerResult(isCorrect, points = 15, customMsg = '') {
+      if (gameState.locked) return;
+      gameState.locked = true;
+
+      const stage = document.getElementById('game-stage');
+      if (isCorrect) {
+        playSound('correct');
+        gameState.score += points;
+        setMiniFeedback(customMsg || '🎉 Benar sekali! Hebat!', true);
+      } else {
+        playSound('wrong');
+        gameState.lives -= 1;
+        stage.classList.add('animate-shake');
+        setTimeout(() => stage.classList.remove('animate-shake'), 350);
+        setMiniFeedback(customMsg || '😅 Ups, kurang tepat! Tetap semangat!', false);
+      }
+
+      gameState.round += 1;
+      updateArenaHUD();
+
+      setTimeout(() => {
+        gameState.locked = false;
+        if (gameState.lives <= 0) {
+          finishGame(false);
+        } else if (gameState.round >= gameState.totalRounds) {
+          finishGame(true);
+        } else {
+          GAME_ENGINES[currentGame.id]();
+        }
+      }, 950);
+    }
+
+    function finishGame(completed) {
+      clearGameTimers();
+      document.getElementById('arena-progress-bar').style.width = '100%';
+      const maxPossible = gameState.totalRounds * 15;
+      const stars = saveGameProgress(currentGame.id, gameState.score, maxPossible);
+
+      if (completed && gameState.score > 0) playSound('win');
+      else playSound('wrong');
+
+      const modal = document.getElementById('result-modal');
+      document.getElementById('result-emoji').textContent = completed ? (stars === 3 ? '🏆' : '🎉') : '💪';
+      document.getElementById('result-heading').textContent = completed
+        ? (stars === 3 ? 'Luar Biasa Sempurna!' : 'Misi Selesai!')
+        : 'Jangan Menyerah!';
+      document.getElementById('result-message').textContent = completed
+        ? `Kamu berhasil menaklukkan "${currentGame.title}" dengan keren!`
+        : 'Nyawamu habis, tapi kamu sudah berjuang hebat. Ayo coba lagi!';
+      document.getElementById('result-stars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+      document.getElementById('result-final-score').textContent = gameState.score;
+
+      modal.classList.remove('hidden');
+    }
+
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    /* ========================================================================
+       5. IMPLEMENTASI LENGKAP SEMUA 20 MINI-GAME INTERAKTIF
+       ======================================================================== */
+    const GAME_ENGINES = {
+
+      /* ----------------------------------------------------------------------
+         GAME 1: Petualangan Pecahan & Desimal (Matematika)
+         ---------------------------------------------------------------------- */
+      1: function () {
+        gameState.totalRounds = 8;
+        const bank = [
+          { target: '0,5', correct: '1/2', decoys: ['1/4', '3/4', '2/5'] },
+          { target: '0,25', correct: '1/4', decoys: ['1/2', '2/3', '3/5'] },
+          { target: '0,75', correct: '3/4', decoys: ['2/4', '1/3', '4/5'] },
+          { target: '0,2', correct: '1/5', decoys: ['1/2', '2/5', '1/4'] },
+          { target: '0,4', correct: '2/5', decoys: ['1/4', '3/5', '1/2'] },
+          { target: '0,6', correct: '3/5', decoys: ['2/3', '1/6', '4/5'] },
+          { target: '0,8', correct: '4/5', decoys: ['3/4', '1/8', '2/5'] },
+          { target: '0,1', correct: '1/10', decoys: ['1/5', '1/2', '2/10'] },
+          { target: '3/6', correct: '0,5', decoys: ['0,3', '0,6', '0,25'] },
+          { target: '2/8', correct: '0,25', decoys: ['0,28', '0,5', '0,4'] }
+        ];
+        const q = bank[gameState.round % bank.length];
+        const options = shuffleArray([q.correct, ...q.decoys]);
+
+        document.getElementById('game-stage').innerHTML = `
+          <div class="text-center animate-pop">
+            <div class="inline-block bg-indigo-100 text-indigo-800 px-4 py-1.5 rounded-full font-extrabold text-sm mb-3">
+              🚀 Tembak Meteor yang Senilai dengan Target!
+            </div>
+            <div class="bg-gradient-to-r from-slate-800 to-indigo-950 text-white rounded-3xl p-6 mb-6 shadow-inner border-4 border-indigo-400">
+              <div class="text-xs uppercase tracking-widest text-indigo-300 font-bold mb-1">Target Radar</div>
+              <div class="font-display font-bold text-5xl sm:text-6xl text-amber-300">${q.target}</div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              ${options.map(opt => `
+                <button onclick="handleAnswerResult('${opt}' === '${q.correct}', 15, '☄️ Tembakan tepat! ${q.target} = ${q.correct}')" 
+                  class="btn-3d bg-gradient-to-br from-orange-400 to-red-500 text-white rounded-3xl p-5 font-display font-bold text-2xl sm:text-3xl flex items-center justify-center gap-2">
+                  <span>☄️</span> <span>${opt}</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      },
+
+      /* ----------------------------------------------------------------------
+         GAME 2: Kasir Kantin Sekolah (Matematika)
+         ---------------------------------------------------------------------- */
+      2: function () {
+        gameState.totalRounds = 8;
+        const menu = [
+          { name: 'Nasi Uduk', icon: '🍛', price: 6000 },
+          { name: 'Es Jeruk', icon: '🍹', price: 3000 },
+          { name: 'Roti Bakar', icon: '🥪', price: 4500 },
+          { name: 'Susu Kotak', icon: '🧃', price: 3500 },
+          { name: 'Bakso Kuah', icon: '🍜', price: 8000 },
+          { name: 'Pisang Goreng', icon: '🍌', price: 2000 },
+          { name: 'Soto Ayam', icon: '🍲', price: 7500 }
+        ];
+        const picked = shuffleArray(menu).slice(0, gameState.round % 2 === 0 ? 2 : 3);
+        const total = picked.reduce((sum, item) => sum + item.price, 0);
+        const bayar = total <= 10000 ? 10000 : (total <= 15000 ? 15000 : 20000);
+        const kembalian = bayar - total;
+
+        const choices = shuffleArray([
+          kembalian,
+          kembalian + 1000,
+          Math.max(500, kembalian - 1000),
+          kembalian + 2000
+        ]);
+
+        document.getElementById('game-stage').innerHTML = `
+          <div class="animate-pop">
+            <div class="text-center mb-4">
+              <span class="bg-amber-100 text-amber-800 px-4 py-1 rounded-full font-extrabold text-sm">
+                🍱 Hitung Uang Kembalian Pembeli!
+              </span>
+            </div>
+            <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 mb-4">
+              <div class="text-xs font-extrabold text-amber-800 uppercase mb-2">Pesanan Jajanan:</div>
+              <div class="space-y-1.5">
+                ${picked.map(it => `
+                  <div class="flex justify-between items-center bg-white px-3 py-2 rounded-xl font-bold text-slate-700">
+                    <span>${it.icon} ${it.name}</span>
+                    <span class="text-emerald-600">Rp ${it.price.toLocaleString('id-ID')}</span>
+                  </div>
+                `).join('')}
+              </div>
+              <div class="mt-3 pt-3 border-t-2 border-dashed border-amber-300 flex justify-between items-center font-display font-bold text-lg text-slate-800">
+                <span>Uang Dibayar Pembeli:</span>
+                <span class="bg-emerald-500 text-white px-3 py-1 rounded-xl">Rp ${bayar.toLocaleString('id-ID')}</span>
+              </div>
+            </div>
+            <div class="text-center font-bold text-slate-600 mb-3">Berapa uang kembaliannya?</div>
+            <div class="grid grid-cols-2 gap-3">
+              ${choices.map(c => `
+                <button onclick="handleAnswerResult(${c === kembalian}, 15, '💵 Kembalian Rp ${kembalian.toLocaleString('id-ID')} pas sekali!')"
+                  class="btn-3d bg-emerald-500 hover:bg-emerald-600 text-white font-display font-bold text-xl py-4 rounded-2xl">
+                  Rp ${c.toLocaleString('id-ID')}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      },
+
+      /* ----------------------------------------------------------------------
+         GAME 3: Labirin Perkalian & Pembagian (Matematika)
+         ---------------------------------------------------------------------- */
+      3: function () {
+        gameState.totalRounds = 8;
+        const isMult = gameState.round % 2 === 0;
+        let qText = '', ans = 0;
+        if (isMult) {
+          const a = Math.floor(Math.random() * 8) + 4;
+          const b = Math.floor(Math.random() * 8) + 3;
+          ans = a * b;
+          qText = `${a} × ${b} = ?`;
+        } else {
+          const b = Math.floor(Math.random() * 7) + 3;
+          ans = Math.floor(Math.random() * 8) + 4;
+          const a = b * ans;
+          qText = `${a} ÷ ${b} = ?`;
+        }
+        const opts = shuffleArray([ans, ans + 3, Math.max(1, ans - 2), ans + 6]);
+        const steps = Array.from({ length: 8 }, (_, idx) => {
+          if (idx < gameState.round) return '🟩';
+          if (idx === gameState.round) return '🏃';
+          return '🔒';
+        }).join(' ');
+
+        document.getElementById('game-stage').innerHTML = `
+          <div class="text-center animate-pop">
+            <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-3 mb-4 text-xl sm:text-2xl tracking-wider">
+              ${steps} 🏁
+            </div>
+            <p class="text-sm font-extrabold text-emerald-700 mb-2">🔑 Buka kunci gerbang labirin dengan menjawab cepat!</p>
+            <div class="bg-slate-800 text-white font-display font-bold text-4xl sm:text-5xl py-7 rounded-3xl mb-6 border-4 border-emerald-400">
+              ${qText}
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              ${opts.map(o => `
+                <button onclick="handleAnswerResult(${o === ans}, 15, '🔓 Gerbang terbuka! Maju terus!')"
+                  class="btn-3d bg-teal-500 hover:bg-teal-600 text-white font-display font-bold text-2xl py-4 rounded-2xl">
+                  ${o}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      },
+
+      /* ----------------------------------------------------------------------
+         GAME 4: Arsitek Bangun Datar (Matematika)
+         ---------------------------------------------------------------------- */
+      4: function () {
+        gameState.totalRounds = 8;
+        const shapes = [
+          { name: 'Persegi', ask: 'Luas', s: 7, ans: 49, unit: 'cm²', svg: '<rect x="55" y="15" width="90" height="90" rx="8" fill="#38bdf8" stroke="#0284c7" stroke-width="4"/><text x="100" y="122" text-anchor="middle" font-weight="bold" fill="#0f172a">s = 7 cm</text>' },
+          { name: 'Persegi', ask: 'Keliling', s: 9, ans: 36, unit: 'cm', svg: '<rect x="55" y="15" width="90" height="90" rx="8" fill="#34d399" stroke="#059669" stroke-width="4"/><text x="100" y="122" text-anchor="middle" font-weight="bold" fill="#0f172a">s = 9 cm</text>' },
+          { name: 'Persegi Panjang', ask: 'Luas', p: 10, l: 6, ans: 60, unit: 'cm²', svg: '<rect x="30" y="25" width="140" height="75" rx="8" fill="#fbbf24" stroke="#d97706" stroke-width="4"/><text x="100" y="118" text-anchor="middle" font-weight="bold" fill="#0f172a">p = 10 cm, l = 6 cm</text>' },
+          { name: 'Persegi Panjang', ask: 'Keliling', p: 8, l: 5, ans: 26, unit: 'cm', svg: '<rect x="30" y="25" width="140" height="75" rx="8" fill="#a78bfa" stroke="#7c3aed" stroke-width="4"/><text x="100" y="118" text-anchor="middle" font-weight="bold" fill="#0f172a">p = 8 cm, l = 5 cm</text>' },
+          { name: 'Segitiga', ask: 'Luas', a: 10, t: 6, ans: 30, unit: 'cm²', svg: '<polygon points="100,15 35,100 165,100" fill="#fb7185" stroke="#e11d48" stroke-width="4"/><text x="100" y="120" text-anchor="middle" font-weight="bold" fill="#0f172a">alas = 10 cm, tinggi = 6 cm</text>' },
+          { name: 'Segitiga Sama Sisi', ask: 'Keliling', s: 8, ans: 24, unit: 'cm', svg: '<polygon points="100,15 40,100 160,100" fill="#2dd4bf" stroke="#0d9488" stroke-width="4"/><text x="100" y="120" text-anchor="middle" font-weight="bold" fill="#0f172a">sisi = 8 cm</text>' },
+          { name: 'Persegi', ask: 'Luas', s: 11, ans: 121, unit: 'cm²', svg: '<rect x="55" y="15" width="90" height="90" rx="8" fill="#60a5fa" stroke="#2563eb" stroke-width="4"/><text x="100" y="122" text-anchor="middle" font-weight="bold" fill="#0f172a">s = 11 cm</text>' },
+          { name: 'Persegi Panjang', ask: 'Luas', p: 12, l: 4, ans: 48, unit: 'cm²', svg: '<rect x="25" y="28" width="150" height="65" rx="8" fill="#f472b6" stroke="#db2777" stroke-width="4"/><text x="100" y="115" text-anchor="middle" font-weight="bold" fill="#0f172a">p = 12 cm, l = 4 cm</text>' }
+        ];
+        const item = shapes[gameState.round % shapes.length];
+        const opts = shuffleArray([item.ans, item.ans + 6, Math.max(4, item.ans - 4), item.ans + 10]);
+
+        document.getElementById('game-stage').innerHTML = `
+          <div class="text-center animate-pop">
+            <span class="bg-cyan-100 text-cyan-800 px-4 py-1 rounded-full font-extrabold text-sm">
+              📐 Proyek Arsitek Cilik
+            </span>
+            <h3 class="font-display font-bold text-xl sm:text-2xl text-slate-800 mt-2 mb-3">
+              Hitung <span class="text-cyan-600 underline">${item.ask}</span> bangun ${item.name} berikut!
+            </h3>
+            <div class="bg-slate-50 border-2 border-slate-200 rounded-2xl p-3 mb-5 flex justify-center">
+              <svg viewBox="0 0 200 132" class="w-56 h-36">${item.svg}</svg>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              ${opts.map(o => `
+                <button onclick="handleAnswerResult(${o === item.ans}, 15, '🏗️ Perhitungan arsitek tepat!')"
+                  class="btn-3d bg-cyan-500 hover:bg-cyan-600 text-white font-display font-bold text-xl py-3.5 rounded-2xl">
+                  ${o} ${item.unit}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      },
+
+      /* ----------------------------------------------------------------------
+         GAME 5: Detektif Pola Angka (Matematika)
+         ---------------------------------------------------------------------- */
+      5: function () {
+        gameState.totalRounds = 8;
+        const patterns = [
+          { seq: [4, 8, 12, '?', 20], ans: 16, hint: 'Loncat +4' },
+          { seq: [3, 6, 12, 24, '?'], ans: 48, hint: 'Dikali 2' },
+          { seq: [50, 45, 40, '?', 30], ans: 35, hint: 'Berkurang 5' },
+          { seq: [1, 4, 9, 16, '?'], ans: 25, hint: 'Bilangan kuadrat' },
+          { seq: [10, 20, 35, 55, '?'], ans: 80, hint: '+10, +15, +20, +25' },
+          { seq: [100, 91, 82, '?', 64], ans: 73, hint: 'Berkurang 9' },
+          { seq: [2, 6, 18, '?', 162], ans: 54, hint: 'Dikali 3' },
+          { seq: [7, 14, 21, 28, '?'], ans: 35, hint: 'Kelipatan 7' }
+        ];
+        const p = patterns[gameState.round % patterns.length];
+        const opts = shuffleArray([p.ans, p.ans + 4, Math.max(1, p.ans - 3), p.ans + 8]);
+
+        document.getElementById('game-stage').innerHTML = `
+          <div class="text-center animate-pop">
+            <div class="inline-block bg-purple-100 text-purple-800 px-4 py-1 rounded-full font-extrabold text-sm mb-3">
+              🔐 Buka Kunci Brankas Rahasia!
+            </div>
+            <p class="text-slate-600 font-bold mb-4">Temukan angka yang hilang pada kode brankas berikut:</p>
+            <div class="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6">
+              ${p.seq.map(num => `
+                <div class="w-14 h-16 sm:w-16 sm:h-20 rounded-2xl flex items-center justify-center font-display font-bold text-2xl sm:text-3xl shadow-md border-4 ${num === '?' ? 'bg-amber-300 border-amber-500 text-slate-900 animate-bounce' : 'bg-slate-800 border-purple-400 text-white'}">
+                  ${num}
+                </div>
+              `).join('')}
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              ${opts.map(o => `
+                <button onclick="handleAnswerResult(${o === p.ans}, 15, '🔓 Klik! Kode ${p.ans} cocok!')"
+                  class="btn-3d bg-purple-600 hover:bg-purple-700 text-white font-display font-bold text-2xl py-4 rounded-2xl">
+                  ${o}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      },
+
+      /* ----------------------------------------------------------------------
+         GAME 6: Pahlawan Pilah Sampah (IPA)
+         ---------------------------------------------------------------------- */
+      6: function () {
+        gameState.totalRounds = 9;
+        const items = [
+          { name: 'Kulit Pisang', icon: '🍌', type: 'Organik' },
+          { name: 'Botol Plastik Bekas', icon: '🧴', type: 'Anorganik' },
+          { name: 'Baterai Bekas', icon: '🔋', type: 'B3' },
+          { name: 'Daun Kering', icon: '🍂', type: 'Organik' },
+          { name: 'Kaleng Minuman', icon: '🥫', type: 'Anorganik' },
+          { name: 'Lampu Neon Pecah', icon: '💡', type: 'B3' },
+          { name: 'Sisa Tulang Ikan', icon: '🐟', type: 'Organik' },
+          { name: 'Kardus Bekas', icon: '📦', type: 'Anorganik' },
+          { name: 'Obat Kadaluarsa', icon: '💊', type: 'B3' }
+        ];
+        const current = items[gameState.round % items.length];
+
+        document.getElementById('game-stage').innerHTML = `
+          <div class="text-center animate-pop">
+            <span class="bg-emerald-100 text-emerald-800 px-4 py-1 rounded-full font-extrabold text-sm">
+              ♻️ Pahlawan Lingkungan Bersih
+            </span>
+            <div class="my-6 bg-slate-50 border-4 border-dashed border-emerald-300 rounded-3xl p-6">
+              <div class="text-7xl mb-2 animate-float">${current.icon}</div>
+              <div class="font-display font-bold text-2xl text-slate-800">${current.name}</div>
+              <p class="text-xs text-slate-500 font-bold mt-1">Masukkan ke tempat sampah yang tepat!</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <button onclick="handleAnswerResult('${current.type}' === 'Organik', 15, '🌿 Tepat! Ini sampah Organik mudah terurai.')"
+                class="btn-3d bg-green-500 hover:bg-green-600 text-white p-4 rounded-2xl font-display font-bold text-lg">
+                🌿 ORGANIK<br><span class="text-xs font-sans font-normal">Sisa Makanan/Daun</span>
+              </button>
+              <button onclick="handleAnswerResult('${current.type}' === 'Anorganik', 15, '♻️ Mantap! Ini sampah Anorganik bisa didaur ulang.')"
+                class="btn-3d bg-amber-500 hover:bg-amber-600 text-white p-4 rounded-2xl font-display font-bold text-lg">
+                ♻️ ANORGANIK<br><span class="text-xs font-sans font-normal">Plastik/Kaleng/Kertas</span>
+              </button>
+              <button onclick="handleAnswerResult('${current.type}' === 'B3', 15, '☢️ Hebat! Ini sampah B3 berbahaya.')"
+                class="btn-3d bg-rose-600 hover:bg-rose-700 text-white p-4 rounded-2xl font-display font-bold text-lg">
+                ☢️ SAMPAH B3<br><span class="text-xs font-sans font-normal">Beracun/Elektronik</span>
+              </button>
+            </div>
+          </div>
+        `;
+      },
+
+      /* ----------------------------------------------------------------------
+         GAME 7: Jelajah Tata Surya (IPA)
+         ---------------------------------------------------------------------- */
+      7: function () {
+        gameState.totalRounds = 8;
+        const planets = [
+          { clue: 'Planet terkecil dan paling dekat dengan Matahari.', ans: 'Merkurius', opts: ['Merkurius', 'Mars', 'Venus', 'Pluto'] },
+          { clue: 'Dijuluki Bintang Fajar dan merupakan planet terpanas di Tata Surya.', ans: 'Venus', opts: ['Venus', 'Merkurius', 'Jupiter', 'Saturnus'] },
+          { clue: 'Satu-satunya planet yang diketahui memiliki kehidupan dan air cair melimpah.', ans: 'Bumi', opts: ['Bumi', 'Mars', 'Neptunus', 'Uranus'] },
+          { clue: 'Dijuluki Planet Merah karena permukaan tanahnya kaya besi oksida.', ans: 'Mars', opts: ['Mars', 'Jupiter', 'Venus', 'Merkurius'] },
+          { clue: 'Planet terbesar di Tata Surya dan memiliki Bintik Merah Raksasa.', ans: 'Jupiter', opts: ['Jupiter', 'Saturnus', 'Uranus', 'Neptunus'] },
+          { clue: 'Terkenal memiliki cincin es dan debu yang sangat indah dan lebar.', ans: 'Saturnus', opts: ['Saturnus', 'Uranus', 'Jupiter', 'Neptunus'] },
+          { clue: 'Planet ke-7 dari Matahari yang berotasi miring seperti menggelinding.', ans: 'Uranus', opts: ['Uranus', 'Neptunus', 'Saturnus', 'Mars'] },
+          { clue: 'Planet terjauh dari Matahari yang berwarna biru cerah dan berangin kencang.', ans: 'Neptunus', opts: ['Neptunus', 'Uranus', 'Jupiter', 'Venus'] }
+        ];
+        const q = planets[gameState.round % planets.length];
+        const opts = shuffleArray(q.opts);
+
+        document.getElementById('game-stage').innerHTML = `
+          <div class="text-center animate-pop">
+            <div class="bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 text-white rounded-3xl p-6 mb-6 border-4 border-indigo-400">
+              <div class="text-5xl mb-3">🔭🪐</div>
+              <div class="text-xs uppercase tracking-widest text-indigo-300 font-bold mb-2">Catatan Astronot</div>
+              <p class="font-display text-lg sm:text-2xl leading-relaxed">"${q.clue}"</p>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              ${opts.map(o => `
+                <button onclick="handleAnswerResult('${o}' === '${q.ans}', 15, '🚀 Benar! Itu adalah planet ${q.ans}!')"
+                  class="btn-3d bg-indigo-600 hover:bg-indigo-700 text-white font-display font-bold text-xl py-4 rounded-2xl">
+                  🪐 ${o}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      },
+
+      /* ----------------------------------------------------------------------
+         GAME 8: Rantai Makanan Hutan (IPA)
+         ---------------------------------------------------------------------- */
+      8: function () {
+        gameState.totalRounds = 8;
+        const chains = [
+          { seq: ['🌾 Padi', '🐭 Tikus', '🐍 Ular', '🦅 Elang'], q: 'Siapakah Konsumen Tingkat 2 pada rantai makanan di atas?', ans: '🐍 Ular' },
+          { seq: ['🌱 Rumput', '🦗 Belalang', '🐸 Katak', '🐍 Ular'], q: 'Organisme manakah yang berperan sebagai Produsen?', ans: '🌱 Rumput' },
+          { seq: ['🌿 Daun', '🐛 Ulat', '🐦 Burung Pipit', '🍄 Jamur'], q: 'Manakah yang berperan sebagai Pengurai (Dekomposer)?', ans: '🍄 Jamur' },
+          { seq: ['🌻 Bunga', '🐝 Lebah', '🦎 Kadal', '🦅 Elang'], q: 'Siapakah Konsumen Tingkat 1 (Herbivora)?', ans: '🐝 Lebah' },
+          { seq: ['🌊 Fitoplankton', '🦐 Udang', '🐟 Ikan Tuna', '🦈 Hiu'], q: 'Siapakah Konsumen Puncak pada ekosistem laut ini?', ans: '🦈 Hiu' },
+          { seq: ['🌽 Jagung', '🐔 Ayam', '🦊 Musang', '🦠 Bakteri'], q: 'Manakah yang berperan sebagai Produsen penghasil makanan?', ans: '🌽 Jagung' },
+          { seq: ['🌿 Tumbuhan Air', '🐌 Siput', '🦆 Bebek', '🐊 Buaya'], q: 'Siapakah Konsumen Tingkat 2?', ans: '🦆 Bebek' },
+          { seq: ['🌳 Pohon', '🐒 Monyet', '🐆 Macan Tutul', '🍄 Jamur'], q: 'Jika Macan Tutul mati, tubuhnya diuraikan oleh...', ans: '🍄 Jamur' }
+        ];
+        const c = chains[gameState.round % chains.length];
+        const opts = shuffleArray(c.seq);
+
+        document.getElementById('game-stage').innerHTML = `
+          <div class="text-center animate-pop">
+            <span class="bg-lime-100 text-lime-800 px-4 py-1 rounded-full font-extrabold text-sm">
+              🌿 Ekosistem & Rantai Makanan
+            </span>
+            <div class="my-5 bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-4 flex flex-wrap items-center justify-center gap-2 text-base sm:text-lg font-extrabold text-emerald-900">
+              ${c.seq.join(' <span class="text-emerald-500">➡️</span> ')}
+            </div>
+            <h3 class="font-display font-bold text-xl text-slate-800 mb-5">${c.q}</h3>
+            <div class="grid grid-cols-2 gap-3">
+              ${opts.map(o => `
+                <button onclick="handleAnswerResult('${o}' === '${c.ans}', 15, '🌿 Tepat sekali!')"
+                  class="btn-3d bg-lime-600 hover:bg-lime-700 text-white font-display font-bold text-lg sm:text-xl py-4 rounded-2xl">
+                  ${o}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      },
+
+      /* ----------------------------------------------------------------------
+         GAME 9: Kuis Perubahan Wujud Benda (IPA)
+         ---------------------------------------------------------------------- */
+      9: function () {
+        gameState.totalRounds = 8;
+        const cases = [
+          { story: 'Es batu yang diletakkan di ruang terbuka lama-kelamaan berubah menjadi air.', ans: 'Mencair', icon: '🧊➡️💧' },
+          { story: 'Ibu memasukkan air sirup ke dalam freezer hingga menjadi es lilin yang padat.', ans: 'Membeku', icon: '💧➡️🧊' },
+          { story: 'Baju basah yang dijemur di bawah terik matahari menjadi kering.', ans: 'Menguap', icon: '👕➡️☁️' },
+          { story: 'Muncul titik-titik air di bagian luar gelas yang berisi es teh dingin.', ans: 'Mengembun', icon: '🥤➡️💦' },
+          { story: 'Kapur barus (kamper) di dalam lemari pakaian lama-lama mengecil dan habis.', ans: 'Menyublim', icon: '⚪➡️💨' },
+          { story: 'Air yang dipanaskan di dalam panci hingga mendidih mengeluarkan banyak uap.', ans: 'Menguap', icon: '♨️➡️💨' },
+          { story: 'Mentega yang dipanaskan di atas wajan berubah menjadi cair.', ans: 'Mencair', icon: '🧈➡️💧' },
+          { story: 'Di pagi hari yang dingin, daun-daun di taman dipenuhi titik embun air.', ans: 'Mengembun', icon: '🍃➡️💧' }
+        ];
+        const q = cases[gameState.round % cases.length];
+        const opts = shuffleArray(['Mencair', 'Membeku', 'Menguap', 'Mengembun', 'Menyublim']).slice(0, 4);
+        if (!opts.includes(q.ans)) opts[0] = q.ans;
+        const finalOpts = shuffleArray(opts);
+
+        document.getElementById('game-stage').innerHTML = `
+          <div class="text-center animate-pop">
+            <span class="bg-sky-100 text-sky-800 px-4 py-1 rounded-full font-extrabold text-sm">
+              🧪 Laboratorium Perubahan Wujud
+            </span>
+            <div class="my-5 bg-sky-50 border-2 border-sky-200 rounded-3xl p-6">
+              <div class="text-5xl mb-3">${q.icon}</div>
+              <p class="font-display font-bold text-lg sm:text-xl text-slate-800">${q.story}</p>
+            </div>
+            <p class="text-sm font-bold text-slate-500 mb-3">Peristiwa perubahan wujud apa yang terjadi?</p>
+            <div class="grid grid-cols-2 gap-3">
+              ${finalOpts.map(o => `
+                <button onclick="handleAnswerResult('${o}' === '${q.ans}', 15, '🧪 Benar! Proses itu disebut ${q.ans}.')"
+                  class="btn-3d bg-sky-500 hover:bg-sky-600 text-white font-display font-bold text-xl py-4 rounded-2xl">
+                  ${o}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      },
+
+      /* ----------------------------------------------------------------------
+         GAME 10: Penjaga Tubuh Manusia (IPA)
+         ---------------------------------------------------------------------- */
+      10: function () {
+        gameState.totalRounds = 8;
+        const organs = [
+          { q: 'Organ pernapasan tempat terjadinya pertukaran oksigen dan karbon dioksida adalah...', ans: 'Alveolus (Paru-paru)', opts: ['Alveolus (Paru-paru)', 'Lambung', 'Kerongkongan', 'Usus Besar'] },
+          { q: 'Enzim asam klorida (HCl) untuk membunuh kuman pada makanan terdapat di...', ans: 'Lambung', opts: ['Lambung', 'Mulut', 'Hidung', 'Jantung'] },
+          { q: 'Penyerapan sari-sari makanan paling utama terjadi di dalam...', ans: 'Usus Halus', opts: ['Usus Halus', 'Usus Besar', 'Tenggorokan', 'Hati'] },
+          { q: 'Fungsi utama bulu-bulu halus dan selaput lendir di rongga hidung adalah...', ans: 'Menyaring debu & kotoran udara', opts: ['Menyaring debu & kotoran udara', 'Mencerna lemak', 'Memompa darah', 'Menyerap air'] },
+          { q: 'Saluran yang menghubungkan rongga mulut dengan lambung disebut...', ans: 'Kerongkongan (Esofagus)', opts: ['Kerongkongan (Esofagus)', 'Tenggorokan (Trakea)', 'Bronkus', 'Usus Buntu'] },
+          { q: 'Penyerapan kembali air dan pembusukan sisa makanan terjadi di...', ans: 'Usus Besar', opts: ['Usus Besar', 'Lambung', 'Paru-paru', 'Pankreas'] },
+          { q: 'Otot sekat yang memisahkan rongga dada dan rongga perut saat bernapas adalah...', ans: 'Diafragma', opts: ['Diafragma', 'Epiglotis', 'Alveolus', 'Faring'] },
+          { q: 'Gigi yang berfungsi untuk mengunyah dan menghaluskan makanan adalah gigi...', ans: 'Geraham', opts: ['Geraham', 'Seri', 'Taring', 'Susu'] }
+        ];
+        const q = organs[gameState.round % organs.length];
+        const opts = shuffleArray(q.opts);
+
+        document.getElementById('game-stage').innerHTML = `
+          <div class="text-center animate-pop">
+            <div class="inline-flex items-center gap-2 bg-rose-100 text-rose-800 px-4 py-1.5 rounded-full font-extrabold text-sm mb-4">
+              🛡️ Perisai Imun Tubuh • Lawan Kuman 🦠
+            </div>
+            <div class="bg-rose-50 border-2 border-rose-200 rounded-3xl p-6 mb-5">
+              <div class="text-5xl mb-2">🫀🫁</div>
+              <h3 class="font-display font-bold text-lg sm:text-xl text-slate-800">${q.q}</h3>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              ${opts.map(o => `
+                <button onclick="handleAnswerResult('${o}' === '${q.ans}', 15, '🛡️ Perisai aktif! Kuman berhasil dikalahkan!')"
+                  class="btn-3d bg-rose-500 hover:bg-rose-600 text-white font-display font-bold text-base sm:text-lg py-4 px-3 rounded-2xl">
+                  ${o}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      },
+
+      /* ----------------------------------------------------------------------
+         GAME 11: Pemburu Kata Baku & EYD (Bahasa)
+         ---------------------------------------------------------------------- */
+      11: function () {
+        gameState.totalRounds = 8;
+        const pairs = [
+          { baku: 'Apotek', non: ['Apotik', 'Apotiek', 'Apoteq'] },
+          { baku: 'Aktivitas', non: ['Aktifitas', 'Aktipitas', 'Aktifitaz'] },
+          { baku: 'Nasihat', non: ['Nasehat', 'Nasiat', 'Naseat'] },
+          { baku: 'Ijazah', non: ['Ijasah', 'Izajah', 'Ijasach'] },
+          { baku: 'Kreativitas', non: ['Kreatifitas', 'Kreatipitas', 'Kreativ'] },
+          { baku: 'Praktik', non: ['Praktek', 'Praktiek', 'Prakteq'] },
+          { baku: 'Cabai', non: ['Cabe', 'Cabay', 'Chabe'] },
+          { baku: 'Jadwal', non: ['Jadual', 'Jatwal', 'Jadwaal'] }
+        ];
+        const p = pairs[gameState.round % pairs.length];
+        const opts = shuffleArray([p.baku, ...p.non]);
+
+        document.getElementById('game-stage').innerHTML = `
+          <div class="text-center animate-pop">
+            <span class="bg-fuchsia-100 text-fuchsia-800 px-4 py-1 rounded-full font-extrabold text-sm">
+              🎯 Detektif KBBI & EYD
+            </span>
+            <h3 class="font-display font-bold text-2xl text-slate-800 mt-4 mb-2">
+              Klik kata yang <span class="text-fuchsia-600 underline">BAKU</span> sesuai KBBI!
+            </h3>
+            <p class="text-sm text-slate-500 font-bold mb-6">Hati-hati dengan kata tidak baku yang mengecoh!</p>
+            <div class="grid grid-cols-2 gap-4">
+              ${opts.map(w => `
+                <button onclick="handleAnswerResult('${w}' === '${p.baku}', 15, '🎯 Tepat! \"${p.baku}\" adalah kata baku!')"
+                  class="btn-3d bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-display font-bold text-2xl py-5 rounded-2xl">
+                  ${w}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      },
+
+      /* ----------------------------------------------------------------------
+         GAME 12: Tebak Peribahasa & Pantun (Bahasa)
+         ---------------------------------------------------------------------- */
+      12: function () {
+        gameState.totalRounds = 8;
+        const items = [
+          { type: 'Pantun', text: 'Jalan-jalan ke Kota Blitar,\nJangan lupa membeli sukun.\nJika ingin menjadi pintar,\n.........................', ans: 'Harus belajar dengan tekun.', opts: ['Harus belajar dengan tekun.', 'Mari bermain di kebun.', 'Jangan lupa makan bihun.', 'Tidur siang sampai bangun.'] },
+          { type: 'Peribahasa', text: 'Arti peribahasa "Bagai air di daun talas" adalah...', ans: 'Orang yang tidak tetap pendiriannya', opts: ['Orang yang tidak tetap pendiriannya', 'Orang yang sangat dermawan', 'Pekerjaan yang sia-sia', 'Sangat rajin bekerja'] },
+          { type: 'Peribahasa', text: 'Arti peribahasa "Berakit-rakit ke hulu, berenang-renang ke tepian" adalah...', ans: 'Bersusah-susah dahulu, bersenang-senang kemudian', opts: ['Bersusah-susah dahulu, bersenang-senang kemudian', 'Suka menolong sesama teman', 'Hemat pangkal kaya', 'Rajin pangkal pandai'] },
+          { type: 'Pantun', text: 'Buah mangga buah kedondong,\nDimakan manis rasanya segar.\nJangan suka berbohong,\n.........................', ans: 'Nanti dijauhi teman belajar.', opts: ['Nanti dijauhi teman belajar.', 'Ayo pergi ke pasar.', 'Beli baju yang lebar.', 'Ikan berenang di pagar.'] },
+          { type: 'Peribahasa', text: 'Arti peribahasa "Besar pasak daripada tiang" adalah...', ans: 'Pengeluaran lebih besar daripada pendapatan', opts: ['Pengeluaran lebih besar daripada pendapatan', 'Rumah yang sangat megah', 'Orang yang sombong', 'Suka menabung setiap hari'] },
+          { type: 'Peribahasa', text: 'Arti peribahasa "Tong kosong nyaring bunyinya" adalah...', ans: 'Orang yang sedikit ilmunya biasanya banyak bicara', opts: ['Orang yang sedikit ilmunya biasanya banyak bicara', 'Alat musik yang merdu', 'Suasana kelas yang sepi', 'Orang yang pendiam tapi pintar'] },
+          { type: 'Pantun', text: 'Pagi-pagi minum jamu,\nDuduk santai di atas batu.\nRajinlah menuntut ilmu,\n.........................', ans: 'Untuk bekal masa depanmu.', opts: ['Untuk bekal masa depanmu.', 'Jangan lupa pakai sepatu.', 'Beli buku di toko satu.', 'Ayo kita bermain gundu.'] },
+          { type: 'Peribahasa', text: 'Arti peribahasa "Sedikit demi sedikit, lama-lama menjadi bukit" adalah...', ans: 'Usaha atau tabungan kecil yang tekun akan menjadi besar', opts: ['Usaha atau tabungan kecil yang tekun akan menjadi besar', 'Mendaki gunung bersama teman', 'Membuang sampah sembarangan', 'Bekerja terburu-buru'] }
+        ];
+        const q = items[gameState.round % items.length];
+        const opts = shuffleArray(q.opts);
+
+        document.getElementById('game-stage').innerHTML = `
+          <div class="text-center animate-pop">
+            <span class="bg-amber-100 text-amber-800 px-4 py-1 rounded-full font-extrabold text-sm">
+              📜 Sastra Indonesia • ${q.type}
+            </span>
+            <div class="my-4 bg-amber-50 border-2 border-amber-300 rounded-3xl p-5 whitespace-pre-line font-display font-bold text-lg sm:text-xl text-slate-800 leading-relaxed">
+              ${q.text}
+            </div>
+            <div class="grid grid-cols-1 gap-2.5">
+              ${opts.map(o => `
+                <button onclick="handleAnswerResult(\`${o}\` === \`${q.ans}\`, 15, '📜 Luar biasa! Sastra Indonesiamu hebat!')"
+                  class="btn-3d bg-amber-500 hover:bg-amber-600 text-white font-display font-bold text-base sm:text-lg py-3.5 px-4 rounded-2xl">
+                  ${o}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      },
+
+      /* ----------------------------------------------------------------------
+         GAME 13: Supermarket Rush (English)
+         ---------------------------------------------------------------------- */
+      13: function () {
+        gameState.totalRounds = 8;
+        const catalog = [
+          { en: 'A Bunch of Bananas', icon: '🍌' },
+          { en: 'A Carton of Milk', icon: '🥛' },
+          { en: 'Fresh Red Apple', icon: '🍎' },
+          { en: 'A Loaf of Bread', icon: '🍞' },
+          { en: 'Sweet Watermelon', icon: '🍉' },
+          { en: 'Orange Carrot', icon: '🥕' },
+          { en: 'Cheese Slice', icon: '🧀' },
+          { en: 'Chicken Egg', icon: '🥚' },
+          { en: 'Strawberry Cake', icon: '🍰' }
+        ];
+        const target = catalog[gameState.round % catalog.length];
+        const decoys = shuffleArray(catalog.filter(i => i.en !== target.en)).slice(0, 3);
+        const opts = shuffleArray([target, ...decoys]);
+
+        document.getElementById('game-stage').innerHTML = `
+          <div class="text-center animate-pop">
+            <span class="bg-teal-100 text-teal-800 px-4 py-1 rounded-full font-extrabold text-sm">
+              🛒 English Shopping List
+            </span>
+            <div class="my-4 bg-teal-600 text-white rounded-3xl p-5 shadow-md">
+              <div class="text-xs uppercase tracking-widest text-teal-200 font-bold">Please buy:</div>
+              <div class="font-display font-bold text-2xl sm:text-3xl mt-1">"${target.en}"</div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              ${opts.map(o => `
+                <button onclick="handleAnswerResult('${o.en}' === '${target.en}', 15, '🛒 Great job! You found ${target.en}!')"
+                  class="btn-3d bg-white hover:bg-teal-50 border-4 border-teal-200 rounded-3xl p-5 flex flex-col items-center justify-center">
+                  <span class="text-6xl mb-2">${o.icon}</span>
+                  <span class="text-xs font-extrabold text-slate-400">Pilih Barang</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      },
+
+      /* ----------------------------------------------------------------------
+         GAME 14: Susun Kalimat Ajaib (Grammar)
+         ---------------------------------------------------------------------- */
+      14: function () {
+        gameState.totalRounds = 8;
+        const sentences = [
+          { words: ['I', 'go', 'to', 'school', 'every', 'day'], meaning: 'Saya pergi ke sekolah setiap hari' },
+          { words: ['She', 'is', 'reading', 'a', 'good', 'book'], meaning: 'Dia sedang membaca buku yang bagus' },
+          { words: ['They', 'play', 'football', 'in', 'the', 'yard'], meaning: 'Mereka bermain sepak bola di halaman' },
+          { words: ['My', 'mother', 'cooks', 'delicious', 'fried', 'rice'], meaning: 'Ibuku memasak nasi goreng yang lezat' },
+          { words: ['We', 'must', 'keep', 'our', 'class', 'clean'], meaning: 'Kita harus menjaga kelas kita tetap bersih' },
+          { words: ['The', 'cat', 'is', 'sleeping', 'on', 'the', 'sofa'], meaning: 'Kucing itu sedang tidur di atas sofa' },
+          { words: ['He', 'drinks', 'a', 'glass', 'of', 'water'], meaning: 'Dia minum segelas air' },
+          { words: ['Birds', 'can', 'fly', 'high', 'in', 'the', 'sky'], meaning: 'Burung-burung bisa terbang tinggi di langit' }
+        ];
+        const current = sentences[gameState.round % sentences.length];
+        const scrambled = shuffleArray(current.words.map((w, idx) => ({ w, idx })));
+        let selected = [];
+
+        function renderSentenceBuilder() {
+          const targetSentence = current.words.join(' ');
+          const builtSentence = selected.map(s => s.w).join(' ');
+
+          document.getElementById('game-stage').innerHTML = `
+            <div class="text-center animate-pop">
+              <span class="bg-purple-100 text-purple-800 px-4 py-1 rounded-full font-extrabold text-sm">
+                🪄 Magic English Grammar
+              </span>
+              <p class="text-sm font-bold text-slate-500 mt-3">Susun kata menjadi kalimat Bahasa Inggris untuk:</p>
+              <div class="font-display font-bold text-lg sm:text-xl text-purple-700 mb-4">"${current.meaning}"</div>
+
+              <!-- Kotak Susunan Kalimat -->
+              <div class="min-h-[72px] bg-purple-50 border-4 border-dashed border-purple-300 rounded-2xl p-3 mb-5 flex flex-wrap items-center justify-center gap-2">
+                ${selected.length === 0 ? '<span class="text-slate-400 font-bold text-sm">Klik kata-kata di bawah secara berurutan...</span>' : ''}
+                ${selected.map((item, pos) => `
+                  <button data-pos="${pos}" class="remove-word-btn btn-3d bg-purple-600 text-white font-display font-bold px-3.5 py-2 rounded-xl text-base sm:text-lg">
+                    ${item.w}
+                  </button>
+                `).join('')}
+              </div>
+
+              <!-- Bank Kata Acak -->
+              <div class="flex flex-wrap justify-center gap-2.5 mb-6">
+                ${scrambled.map(item => {
+                  const used = selected.some(s => s.idx === item.idx);
+                  return `
+                    <button data-idx="${item.idx}" ${used ? 'disabled' : ''} 
+                      class="pick-word-btn btn-3d px-4 py-2.5 rounded-xl font-display font-bold text-base sm:text-lg ${used ? 'bg-slate-200 text-slate-400 opacity-50 cursor-not-allowed' : 'bg-amber-400 hover:bg-amber-500 text-slate-900'}">
+                      ${item.w}
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+
+              <div class="flex justify-center gap-3">
+                <button id="reset-words-btn" class="btn-3d bg-slate-200 text-slate-700 font-display font-bold px-5 py-3 rounded-2xl">
+                  🔄 Ulangi
+                </button>
+                <button id="check-sentence-btn" class="btn-3d bg-emerald-500 hover:bg-emerald-600 text-white font-display font-bold px-6 py-3 rounded-2xl">
+                  ✅ Periksa Kalimat
+                </button>
+              </div>
+            </div>
+          `;
+
+          document.querySelectorAll('.pick-word-btn').forEach(btn => {
+            btn.onclick = () => {
+              playSound('click');
+              const idx = Number(btn.dataset.idx);
+              const found = scrambled.find(x => x.idx === idx);
+              if (found) {
+                selected.push(found);
+                renderSentenceBuilder();
+              }
+            };
+          });
+
+          document.querySelectorAll('.remove-word-btn').forEach(btn => {
+            btn.onclick = () => {
+              playSound('click');
+              const pos = Number(btn.dataset.pos);
+              selected.splice(pos, 1);
+              renderSentenceBuilder();
+            };
+          });
+
+          document.getElementById('reset-words-btn').onclick = () => {
+            playSound('click');
+            selected = [];
+            renderSentenceBuilder();
+          };
+
+          document.getElementById('check-sentence-btn').onclick = () => {
+            handleAnswerResult(builtSentence === targetSentence, 15, '🪄 Awesome! Susunan kalimatmu tepat!');
+          };
+        }
+
+        renderSentenceBuilder();
+      },
+
+      /* ----------------------------------------------------------------------
+         GAME 15: Petualang Nusantara (IPS & Budaya)
+         ---------------------------------------------------------------------- */
+      15: function () {
+        gameState.totalRounds = 8;
+        const culture = [
+          { q: 'Rumah adat Tongkonan dengan atap melengkung seperti perahu berasal dari provinsi...', ans: 'Sulawesi Selatan', opts: ['Sulawesi Selatan', 'Sumatera Barat', 'Bali', 'Papua'] },
+          { q: 'Tari Kecak yang dimainkan puluhan penari sambil menyerukan "cak-cak-cak" berasal dari...', ans: 'Bali', opts: ['Bali', 'Jawa Tengah', 'Aceh', 'Kalimantan Timur'] },
+          { q: 'Makanan khas Rendang yang mendunia berasal dari provinsi...', ans: 'Sumatera Barat', opts: ['Sumatera Barat', 'Sumatera Utara', 'Jawa Barat', 'Sulawesi Utara'] },
+          { q: 'Tari Saman yang terkenal dengan gerakan tangan super cepat dan kompak berasal dari...', ans: 'Aceh', opts: ['Aceh', 'Riau', 'Lampung', 'Jambi'] },
+          { q: 'Rumah adat Honai yang berbentuk bundar dengan atap jerami berasal dari...', ans: 'Papua', opts: ['Papua', 'Nusa Tenggara Timur', 'Maluku', 'Kalimantan Barat'] },
+          { q: 'Makanan khas Pempek dengan kuah cuko asam manis pedas berasal dari...', ans: 'Sumatera Selatan', opts: ['Sumatera Selatan', 'Bangka Belitung', 'Bengkulu', 'Banten'] },
+          { q: 'Alat musik tradisional Angklung yang terbuat dari bambu berasal dari provinsi...', ans: 'Jawa Barat', opts: ['Jawa Barat', 'Jawa Timur', 'DI Yogyakarta', 'Banten'] },
+          { q: 'Gudeg yang terbuat dari nangka muda manis adalah makanan khas dari...', ans: 'DI Yogyakarta', opts: ['DI Yogyakarta', 'Jawa Barat', 'Bali', 'Kalimantan Selatan'] }
+        ];
+        const q = culture[gameState.round % culture.length];
+        const opts = shuffleArray(q.opts);
+
+        document.getElementById('game-stage').innerHTML = `
+          <div class="text-center animate-pop">
+            <span class="bg-orange-100 text-orange-800 px-4 py-1 rounded-full font-extrabold text-sm">
+              🏝️ Jelajah Budaya Indonesia
+            </span>
+            <div class="my-5 bg-orange-50 border-2 border-orange-200 rounded-3xl p-6">
+              <div class="text-5xl mb-3">🇮🇩🏛️</div>
+              <h3 class="font-display font-bold text-lg sm:text-xl text-slate-800">${q.q}</h3>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              ${opts.map(o => `
+                <button onclick="handleAnswerResult('${o}' === '${q.ans}', 15, '🏝️ Hebat! Kamu mengenal budaya Nusantara!')"
+                  class="btn-3d bg-orange-500 hover:bg-orange-600 text-white font-display font-bold text-lg py-4 rounded-2xl">
+                  📍 ${o}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      },
+
+      /* ----------------------------------------------------------------------
+         GAME 16: Jejak Pahlawan Nasional (IPS & Budaya)
+         ---------------------------------------------------------------------- */
+      16: function () {
+        gameState.totalRounds = 8;
+        const heroes = [
+          { q: 'Siapakah Bapak Pendidikan Nasional Indonesia yang mendirikan Taman Siswa?', ans: 'Ki Hajar Dewantara', opts: ['Ki Hajar Dewantara', 'Ir. Soekarno', 'Drs. Moh. Hatta', 'Jenderal Sudirman'] },
+          { q: 'Pahlawan wanita dari Jepara yang memperjuangkan emansipasi wanita melalui buku "Habis Gelap Terbitlah Terang" adalah...', ans: 'R.A. Kartini', opts: ['R.A. Kartini', 'Cut Nyak Dien', 'Dewi Sartika', 'Fatmawati'] },
+          { q: 'Siapakah tokoh proklamator sekaligus Presiden pertama Republik Indonesia?', ans: 'Ir. Soekarno', opts: ['Ir. Soekarno', 'Bung Tomo', 'Pangeran Diponegoro', 'Tuanku Imam Bonjol'] },
+          { q: 'Panglima Besar TNI yang memimpin perang gerilya melawan Belanda meski sedang sakit adalah...', ans: 'Jenderal Sudirman', opts: ['Jenderal Sudirman', 'Pattimura', 'Sultan Hasanuddin', 'Sisingamangaraja XII'] },
+          { q: 'Pahlawan dari Makassar yang dijuluki "Ayam Jantan dari Timur" adalah...', ans: 'Sultan Hasanuddin', opts: ['Sultan Hasanuddin', 'Pangeran Antasari', 'Kapitan Pattimura', 'Teuku Umar'] },
+          { q: 'Tokoh yang membakar semangat arek-arek Surabaya pada pertempuran 10 November 1945 adalah...', ans: 'Bung Tomo', opts: ['Bung Tomo', 'Moh. Yamin', 'Ahmad Soebardjo', 'Sayuti Melik'] },
+          { q: 'Siapakah penjahit bendera Merah Putih pusaka yang dikibarkan saat Proklamasi 17 Agustus 1945?', ans: 'Ibu Fatmawati', opts: ['Ibu Fatmawati', 'R.A. Kartini', 'Cut Meutia', 'Martha Christina Tiahahu'] },
+          { q: 'Pahlawan nasional dari Maluku yang memimpin perlawanan di Benteng Duurstede adalah...', ans: 'Kapitan Pattimura', opts: ['Kapitan Pattimura', 'Sultan Ageng Tirtayasa', 'Pangeran Diponegoro', 'Cut Nyak Dien'] }
+        ];
+        const q = heroes[gameState.round % heroes.length];
+        const opts = shuffleArray(q.opts);
+
+        document.getElementById('game-stage').innerHTML = `
+          <div class="text-center animate-pop">
+            <span class="bg-red-100 text-red-800 px-4 py-1 rounded-full font-extrabold text-sm">
+              🇮🇩 Sejarah Perjuangan Bangsa
+            </span>
+            <div class="my-5 bg-red-50 border-2 border-red-200 rounded-3xl p-6">
+              <div class="text-5xl mb-3">🎖️📜</div>
+              <h3 class="font-display font-bold text-lg sm:text-xl text-slate-800">${q.q}</h3>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              ${opts.map(o => `
+                <button onclick="handleAnswerResult('${o}' === '${q.ans}', 15, '🇮🇩 Hormat! Jawabanmu benar!')"
+                  class="btn-3d bg-red-600 hover:bg-red-700 text-white font-display font-bold text-lg py-4 rounded-2xl">
+                  ${o}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      },
+
+      /* ----------------------------------------------------------------------
+         GAME 17: Pengusaha Cilik (IPS & Budaya)
+         ---------------------------------------------------------------------- */
+      17: function () {
+        gameState.totalRounds = 8;
+        const biz = [
+          { item: '🧃 Jus Mangga', modal: 4000, targetUntung: 2000, ans: 6000, opts: [6000, 4000, 3500, 5000] },
+          { item: '🧁 Kue Cupcake', modal: 3500, targetUntung: 1500, ans: 5000, opts: [5000, 3000, 3500, 4000] },
+          { item: '🥪 Roti Lapis', modal: 5000, targetUntung: 2500, ans: 7500, opts: [7500, 5000, 4500, 6000] },
+          { item: '🍨 Es Krim Buah', modal: 4500, targetUntung: 1500, ans: 6000, opts: [6000, 4000, 4500, 5000] },
+          { item: '🍩 Donat Cokelat', modal: 3000, targetUntung: 1000, ans: 4000, opts: [4000, 2500, 3000, 3500] },
+          { item: '🥤 Es Teh Lemon', modal: 2500, targetUntung: 1500, ans: 4000, opts: [4000, 2000, 2500, 3000] },
+          { item: '🌮 Lumpia Sayur', modal: 3500, targetUntung: 2000, ans: 5500, opts: [5500, 3500, 3000, 4500] },
+          { item: '🍮 Puding Susu', modal: 4000, targetUntung: 1500, ans: 5500, opts: [5500, 3500, 4000, 4500] }
+        ];
+        const q = biz[gameState.round % biz.length];
+        const opts = shuffleArray(q.opts);
+
+        document.getElementById('game-stage').innerHTML = `
+          <div class="text-center animate-pop">
+            <span class="bg-amber-100 text-amber-800 px-4 py-1 rounded-full font-extrabold text-sm">
+              💼 Simulasi Kewirausahaan SD
+            </span>
+            <div class="my-5 bg-amber-50 border-2 border-amber-300 rounded-3xl p-5">
+              <div class="font-display font-bold text-2xl text-slate-800 mb-3">Jualan ${q.item}</div>
+              <div class="flex justify-center gap-4 text-sm sm:text-base font-extrabold">
+                <div class="bg-white px-4 py-2 rounded-xl border border-amber-200">
+                  Modal Bahan: <span class="text-rose-600">Rp ${q.modal.toLocaleString('id-ID')}</span>
+                </div>
+                <div class="bg-white px-4 py-2 rounded-xl border border-amber-200">
+                  Target Untung: <span class="text-emerald-600">Rp ${q.targetUntung.toLocaleString('id-ID')}</span>
+                </div>
+              </div>
+              <p class="text-slate-600 font-bold text-sm mt-3">Berapa harga jual per porsi agar meraih target untung tanpa rugi?</p>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              ${opts.map(o => `
+                <button onclick="handleAnswerResult(${o === q.ans}, 15, '💰 Untung diraih! Pengusaha cilik sukses!')"
+                  class="btn-3d bg-amber-500 hover:bg-amber-600 text-white font-display font-bold text-xl py-4 rounded-2xl">
+                  Rp ${o.toLocaleString('id-ID')}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      },
+
+      /* ----------------------------------------------------------------------
+         GAME 18: Ketik Cepat Ceria (Ketangkasan & Logika)
+         ---------------------------------------------------------------------- */
+      18: function () {
+        gameState.totalRounds = 8;
+        const words = ['NUSANTARA', 'MATAHARI', 'SAHABAT', 'PRESTASI', 'INDONESIA', 'SEMANGAT', 'KREATIF', 'PANCASILA', 'BELAJAR', 'JUARA'];
+        const targetWord = words[gameState.round % words.length];
+        let timeLeft = 100; // Persentase ketinggian balon
+
+        document.getElementById('game-stage').innerHTML = `
+          <div class="text-center animate-pop">
+            <span class="bg-pink-100 text-pink-800 px-4 py-1 rounded-full font-extrabold text-sm">
+              🎈 Ketik Cepat Sebelum Balon Terbang!
+            </span>
+
+            <div class="relative h-48 bg-gradient-to-b from-sky-200 to-sky-50 rounded-3xl my-4 border-4 border-sky-300 overflow-hidden flex items-center justify-center">
+              <div class="absolute top-2 left-0 right-0 border-b-2 border-dashed border-rose-400 text-[11px] font-extrabold text-rose-600">
+                ⚠️ BATAS AWAN ⚠️
+              </div>
+              <div id="balloon-box" class="transition-all duration-200 flex flex-col items-center" style="transform: translateY(35px);">
+                <div class="text-5xl">🎈</div>
+                <div class="bg-white border-4 border-pink-500 px-5 py-1.5 rounded-2xl font-display font-bold text-2xl sm:text-3xl text-slate-800 shadow-lg tracking-wider">
+                  ${targetWord}
+                </div>
+              </div>
+            </div>
+
+            <input 
+              type="text" 
+              id="typing-input" 
+              autocomplete="off"
+              placeholder="Ketik kata di atas lalu tekan Enter..."
+              class="w-full max-w-md mx-auto text-center uppercase font-display font-bold text-2xl py-3 px-4 rounded-2xl border-4 border-pink-300 focus:border-pink-500 focus:outline-none"
+            />
+          </div>
+        `;
+
+        const inputEl = document.getElementById('typing-input');
+        const balloonEl = document.getElementById('balloon-box');
+        inputEl.focus();
+
+        clearGameTimers();
+        gameState.timerId = setInterval(() => {
+          timeLeft -= 1.5;
+          const offsetY = 35 - ((100 - timeLeft) * 0.95);
+          if (balloonEl) balloonEl.style.transform = `translateY(${offsetY}px)`;
+          if (timeLeft <= 0) {
+            clearGameTimers();
+            handleAnswerResult(false, 0, '🎈 Yah, balonnya keburu terbang ke awan!');
+          }
+        }, 120);
+
+        inputEl.oninput = () => {
+          if (inputEl.value.trim().toUpperCase() === targetWord) {
+            clearGameTimers();
+            handleAnswerResult(true, 15, '🎉 Kilat sekali! Balon berhasil ditangkap!');
+          }
+        };
+      },
+
+      /* ----------------------------------------------------------------------
+         GAME 19: Memory Card Nusantara (Ketangkasan & Logika)
+         ---------------------------------------------------------------------- */
+      19: function () {
+        // Game memori 12 kartu (6 pasang alat musik & daerah asalnya)
+        gameState.totalRounds = 6; // 6 pasangan = selesai
+        const pairs = [
+          { pairId: 1, label: '🥁 Tifa', sub: 'Alat Musik' },
+          { pairId: 1, label: '🏝️ Papua', sub: 'Daerah Asal' },
+          { pairId: 2, label: '🎋 Angklung', sub: 'Alat Musik' },
+          { pairId: 2, label: '⛰️ Jawa Barat', sub: 'Daerah Asal' },
+          { pairId: 3, label: '🎸 Sasando', sub: 'Alat Musik' },
+          { pairId: 3, label: '🌊 NTT', sub: 'Daerah Asal' },
+          { pairId: 4, label: '🎹 Kolintang', sub: 'Alat Musik' },
+          { pairId: 4, label: '🌴 Sulut', sub: 'Daerah Asal' },
+          { pairId: 5, label: '🔔 Gamelan', sub: 'Alat Musik' },
+          { pairId: 5, label: '🏛️ Jawa Tengah', sub: 'Daerah Asal' },
+          { pairId: 6, label: '🎶 Saluang', sub: 'Alat Musik' },
+          { pairId: 6, label: '🏠 Sumbar', sub: 'Daerah Asal' }
+        ];
+
+        const deck = shuffleArray(pairs.map((c, idx) => ({ ...c, uid: idx, flipped: false, matched: false })));
+        let flippedCards = [];
+        let busy = false;
+
+        function renderBoard() {
+          document.getElementById('game-stage').innerHTML = `
+            <div class="text-center">
+              <div class="mb-3">
+                <span class="bg-indigo-100 text-indigo-800 px-4 py-1 rounded-full font-extrabold text-sm">
+                  🥁 Cocokkan 6 Pasang Alat Musik & Daerah Asalnya!
+                </span>
+              </div>
+              <div class="grid grid-cols-3 sm:grid-cols-4 gap-2.5 sm:gap-3">
+                ${deck.map(card => {
+                  if (card.matched) {
+                    return `
+                      <div class="h-24 sm:h-28 rounded-2xl bg-emerald-100 border-4 border-emerald-400 flex flex-col items-center justify-center p-2">
+                        <span class="font-display font-bold text-sm sm:text-base text-emerald-800">${card.label}</span>
+                        <span class="text-[10px] font-bold text-emerald-600">✅ Cocok</span>
+                      </div>`;
+                  }
+                  if (card.flipped) {
+                    return `
+                      <div class="h-24 sm:h-28 rounded-2xl bg-amber-100 border-4 border-amber-400 flex flex-col items-center justify-center p-2 animate-pop">
+                        <span class="font-display font-bold text-sm sm:text-base text-slate-800">${card.label}</span>
+                        <span class="text-[10px] font-bold text-amber-700">${card.sub}</span>
+                      </div>`;
+                  }
+                  return `
+                    <button data-uid="${card.uid}" class="mem-card-btn btn-3d h-24 sm:h-28 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white flex items-center justify-center text-3xl font-display font-bold">
+                      ❓
+                    </button>`;
+                }).join('')}
+              </div>
+            </div>
+          `;
+
+          document.querySelectorAll('.mem-card-btn').forEach(btn => {
+            btn.onclick = () => {
+              if (busy) return;
+              const uid = Number(btn.dataset.uid);
+              const card = deck.find(c => c.uid === uid);
+              if (!card || card.flipped || card.matched) return;
+
+              playSound('click');
+              card.flipped = true;
+              flippedCards.push(card);
+              renderBoard();
+
+              if (flippedCards.length === 2) {
+                busy = true;
+                const [c1, c2] = flippedCards;
+                if (c1.pairId === c2.pairId) {
+                  setTimeout(() => {
+                    playSound('correct');
+                    c1.matched = true;
+                    c2.matched = true;
+                    flippedCards = [];
+                    busy = false;
+                    gameState.score += 15;
+                    gameState.round += 1;
+                    updateArenaHUD();
+                    setMiniFeedback('🎉 Pasangan alat musik cocok!', true);
+                    renderBoard();
+                    if (gameState.round >= 6) {
+                      setTimeout(() => finishGame(true), 600);
+                    }
+                  }, 450);
+                } else {
+                  setTimeout(() => {
+                    playSound('wrong');
+                    c1.flipped = false;
+                    c2.flipped = false;
+                    flippedCards = [];
+                    busy = false;
+                    setMiniFeedback('🔄 Belum cocok, ingat posisinya ya!', false);
+                    renderBoard();
+                  }, 750);
+                }
+              }
+            };
+          });
+        }
+
+        renderBoard();
+      },
+
+      /* ----------------------------------------------------------------------
+         GAME 20: Awas Hoaks & Internet Aman (Ketangkasan & Logika)
+         ---------------------------------------------------------------------- */
+      20: function () {
+        gameState.totalRounds = 8;
+        const scenarios = [
+          { q: 'Kamu mendapat pesan berantai: "Sebarkan ke 10 grup atau akunmu akan dihapus besok!". Apa tindakanmu?', ans: 'Abaikan dan tidak menyebarkannya karena itu ciri hoaks', opts: ['Abaikan dan tidak menyebarkannya karena itu ciri hoaks', 'Langsung kirim ke semua teman kelas', 'Panik dan memberikan kata sandi', 'Percaya begitu saja'] },
+          { q: 'Manakah contoh kata sandi (password) akun belajar yang paling kuat dan aman?', ans: 'BintangBiru#2026!', opts: ['BintangBiru#2026!', '12345678', 'namasaya', 'abcdefgh'] },
+          { q: 'Orang asing di game online menanyakan alamat rumah dan nomor HP orang tuamu. Apa yang harus kamu lakukan?', ans: 'Tolak, blokir, dan segera beri tahu orang tua/guru', opts: ['Tolak, blokir, dan segera beri tahu orang tua/guru', 'Berikan alamat lengkap rumahmu', 'Ajak ketemuan sendirian', 'Kirim foto kartu keluarga'] },
+          { q: 'Sebelum membagikan berita mengejutkan di media sosial, sikap bijak kita adalah...', ans: 'Cek kebenaran berita dari sumber resmi terlebih dahulu', opts: ['Cek kebenaran berita dari sumber resmi terlebih dahulu', 'Langsung bagikan agar jadi yang pertama', 'Ubah judulnya agar lebih seram', 'Komentar marah-marah'] },
+          { q: 'Jika ada teman yang diejek atau dirundung (cyberbullying) di grup chat, sebaiknya kita...', ans: 'Membela dengan sopan dan melapor kepada guru/orang tua', opts: ['Membela dengan sopan dan melapor kepada guru/orang tua', 'Ikut menertawakan dan mengejek', 'Merekam layar untuk disebar', 'Diam dan ikut membully'] },
+          { q: 'Informasi pribadi manakah yang TIDAK BOLEH dibagikan secara publik di internet?', ans: 'Password akun, alamat rumah, dan nomor telepon', opts: ['Password akun, alamat rumah, dan nomor telepon', 'Hobi membaca buku cerita', 'Warna kesukaanmu', 'Nama hewan peliharaan kartun'] },
+          { q: 'Kamu melihat pop-up bertuliskan "Selamat! Kamu menang HP gratis, klik dan isi data pribadi!". Ini adalah...', ans: 'Penipuan digital (Phishing) yang harus ditutup', opts: ['Penipuan digital (Phishing) yang harus ditutup', 'Hadiah resmi dari sekolah', 'Undian berhadiah asli', 'Tugas sekolah online'] },
+          { q: 'Etika berkomentar yang baik di internet (Netiket) adalah...', ans: 'Menggunakan bahasa yang sopan dan menghargai orang lain', opts: ['Menggunakan bahasa yang sopan dan menghargai orang lain', 'Menulis dengan huruf kapital semua sambil marah', 'Mengejek karya orang lain', 'Menyebar rahasia teman'] }
+        ];
+        const q = scenarios[gameState.round % scenarios.length];
+        const opts = shuffleArray(q.opts);
+
+        document.getElementById('game-stage').innerHTML = `
+          <div class="text-center animate-pop">
+            <span class="bg-cyan-100 text-cyan-800 px-4 py-1 rounded-full font-extrabold text-sm">
+              🛡️ Literasi Digital & Keamanan Internet
+            </span>
+            <div class="my-4 bg-cyan-50 border-2 border-cyan-200 rounded-3xl p-5">
+              <div class="text-4xl mb-2">💻🔒</div>
+              <h3 class="font-display font-bold text-base sm:text-xl text-slate-800">${q.q}</h3>
+            </div>
+            <div class="grid grid-cols-1 gap-2.5">
+              ${opts.map(o => `
+                <button onclick="handleAnswerResult(\`${o}\` === \`${q.ans}\`, 15, '🛡️ Hebat! Kamu warga digital yang cerdas & aman!')"
+                  class="btn-3d bg-cyan-600 hover:bg-cyan-700 text-white font-display font-bold text-sm sm:text-base py-3.5 px-4 rounded-2xl text-left sm:text-center">
+                  ${o}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+    };
+
+    /* ========================================================================
+       6. INISIALISASI HALAMAN SAAT DIMUAT
+       ======================================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      updateTotalStarsUI();
+      renderGameGrid();
+    });
+  </script>
+</body>
+</html>
