@@ -105,7 +105,10 @@
           <div class="bg-gradient-to-r from-amber-100 to-yellow-100 border-2 border-amber-300 rounded-2xl px-4 py-2.5 flex items-center justify-between sm:justify-center gap-3 shadow-sm">
             <span class="text-3xl">⭐</span>
             <div>
-              <div class="text-xs font-bold text-amber-800 uppercase">Total Bintangmu</div>
+              <div class="text-xs font-bold text-amber-800 uppercase flex items-center gap-1.5">
+                <span>Total Bintangmu</span>
+                <span id="save-status-badge" class="text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full">☁️ Tersimpan</span>
+              </div>
               <div class="text-xl font-display font-bold text-amber-600"><span id="total-stars">0</span> / 60 Bintang</div>
             </div>
             <button onclick="toggleSound()" id="sound-toggle-btn" title="Suara Efek" class="ml-2 w-10 h-10 rounded-xl bg-white border-2 border-amber-300 flex items-center justify-center text-lg hover:bg-amber-50">
@@ -157,7 +160,7 @@
 
     <!-- Footer Portal -->
     <footer class="mt-12 text-center text-slate-500 text-sm font-bold pb-6">
-      ✨ Belajar sambil bermain jadi lebih seru! Semua skor & bintang tersimpan otomatis di perangkatmu.
+      ✨ Belajar sambil bermain jadi lebih seru! Semua progres level, rekor skor & bintang tersimpan otomatis.
     </footer>
   </div>
 
@@ -239,7 +242,11 @@
   </div>
 
   <!-- ==================== JAVASCRIPT UTAMA & 20 MINI-GAME ==================== -->
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
     /* ========================================================================
        1. SISTEM AUDIO CERIA (WEB AUDIO API TANPA FILE EKSTERNAL)
        ======================================================================== */
@@ -281,9 +288,9 @@
           osc.stop(now + 0.08);
         } else if (type === 'correct') {
           osc.type = 'triangle';
-          osc.frequency.setValueAtTime(523.25, now); // C5
-          osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
-          osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+          osc.frequency.setValueAtTime(523.25, now);
+          osc.frequency.setValueAtTime(659.25, now + 0.08);
+          osc.frequency.setValueAtTime(783.99, now + 0.16);
           gain.gain.setValueAtTime(0.22, now);
           gain.gain.exponentialRampToValueAtTime(0.01, now + 0.32);
           osc.start(now);
@@ -317,10 +324,68 @@
     }
 
     /* ========================================================================
-       2. PENYIMPANAN SKOR, BINTANG & LEVEL OTOMATIS (LOCALSTORAGE)
+       2. PENYIMPANAN SKOR, BINTANG & LEVEL PERMANEN (CLOUD FIRESTORE)
        ======================================================================== */
-    const STORAGE_KEY = 'zona_belajar_sd_progress_v2';
-    let userProgress = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    let userProgress = {};
+    let db = null;
+    let auth = null;
+    let currentUserId = null;
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'zona-belajar-sd';
+
+    function setSaveStatus(text, isReady = true) {
+      const badge = document.getElementById('save-status-badge');
+      if (!badge) return;
+      badge.textContent = text;
+      badge.className = isReady
+        ? 'text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full'
+        : 'text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full';
+    }
+
+    async function initCloudStorage() {
+      try {
+        if (typeof __firebase_config === 'undefined') {
+          setSaveStatus('💾 Mode Sesi', false);
+          return;
+        }
+        setSaveStatus('⏳ Memuat...', false);
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+
+        currentUserId = auth.currentUser?.uid || null;
+        if (!currentUserId) return;
+
+        const docRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'progress', 'main');
+        const snap = await getDoc(docRef);
+        if (snap.exists() && snap.data().games) {
+          userProgress = snap.data().games;
+          updateTotalStarsUI();
+          renderGameGrid();
+        }
+        setSaveStatus('☁️ Tersimpan', true);
+      } catch (err) {
+        setSaveStatus('💾 Offline', false);
+      }
+    }
+
+    async function persistProgressToCloud() {
+      if (!db || !currentUserId) return;
+      try {
+        setSaveStatus('⏳ Menyimpan...', false);
+        const docRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'progress', 'main');
+        await setDoc(docRef, { games: userProgress, updatedAt: Date.now() }, { merge: true });
+        setSaveStatus('☁️ Tersimpan', true);
+      } catch (err) {
+        setSaveStatus('⚠️ Gagal Simpan', false);
+      }
+    }
 
     function getGameLevel(gameId) {
       return (userProgress[gameId] && userProgress[gameId].level) ? userProgress[gameId].level : 1;
@@ -340,8 +405,8 @@
         highScore: Math.max(prev.highScore, score),
         level: nextLevel
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(userProgress));
       updateTotalStarsUI();
+      persistProgressToCloud();
       return { stars, nextLevel };
     }
 
@@ -1703,11 +1768,21 @@
     };
 
     /* ========================================================================
-       6. INISIALISASI HALAMAN SAAT DIMUAT
+       6. EKSPOS FUNGSI KE GLOBAL WINDOW & INISIALISASI HALAMAN
        ======================================================================== */
+    window.toggleSound = toggleSound;
+    window.setCategory = setCategory;
+    window.renderGameGrid = renderGameGrid;
+    window.launchGame = launchGame;
+    window.exitToMenu = exitToMenu;
+    window.nextLevelCurrentGame = nextLevelCurrentGame;
+    window.closeModalAndMenu = closeModalAndMenu;
+    window.handleAnswerResult = handleAnswerResult;
+
     window.addEventListener('DOMContentLoaded', () => {
       updateTotalStarsUI();
       renderGameGrid();
+      initCloudStorage();
     });
   </script>
 </body>
