@@ -173,7 +173,10 @@
 
         <div class="flex items-center gap-2">
           <span id="arena-icon" class="text-2xl">🎮</span>
-          <h2 id="arena-title" class="font-display font-bold text-lg sm:text-xl text-slate-800 truncate max-w-[200px] sm:max-w-xs">Judul Game</h2>
+          <div>
+            <h2 id="arena-title" class="font-display font-bold text-base sm:text-xl text-slate-800 truncate max-w-[180px] sm:max-w-xs leading-tight">Judul Game</h2>
+            <span id="arena-level-badge" class="inline-block text-[11px] font-extrabold uppercase tracking-wider bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">Level 1</span>
+          </div>
         </div>
 
         <div class="flex items-center gap-3">
@@ -225,8 +228,8 @@
       </div>
 
       <div class="flex flex-col sm:flex-row gap-3">
-        <button onclick="replayCurrentGame()" class="btn-3d flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-display font-bold py-3 px-4 rounded-2xl text-base">
-          🔄 Main Lagi
+        <button id="next-level-btn" onclick="nextLevelCurrentGame()" class="btn-3d flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-display font-bold py-3 px-4 rounded-2xl text-base">
+          🚀 Lanjut Level 2
         </button>
         <button onclick="closeModalAndMenu()" class="btn-3d flex-1 bg-sky-500 hover:bg-sky-600 text-white font-display font-bold py-3 px-4 rounded-2xl text-base">
           🏠 Menu Utama
@@ -308,30 +311,38 @@
             o.stop(now + idx * 0.1 + 0.25);
           });
         }
-      } catch (e) { /* Abaikan jika browser membatasi audio awal */ }
+      } catch (e) {
+        // Abaikan jika browser memblokir autoplay audio sebelum interaksi
+      }
     }
 
     /* ========================================================================
-       2. PENYIMPANAN SKOR & BINTANG (LOCALSTORAGE)
+       2. PENYIMPANAN SKOR, BINTANG & LEVEL OTOMATIS (LOCALSTORAGE)
        ======================================================================== */
-    const STORAGE_KEY = 'zona_belajar_sd_progress_v1';
+    const STORAGE_KEY = 'zona_belajar_sd_progress_v2';
     let userProgress = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
 
-    function saveGameProgress(gameId, score, maxScore) {
+    function getGameLevel(gameId) {
+      return (userProgress[gameId] && userProgress[gameId].level) ? userProgress[gameId].level : 1;
+    }
+
+    function saveGameProgress(gameId, score, maxScore, completed) {
       const ratio = score / maxScore;
       let stars = 0;
       if (ratio >= 0.85) stars = 3;
       else if (ratio >= 0.55) stars = 2;
       else if (score > 0) stars = 1;
 
-      const prev = userProgress[gameId] || { stars: 0, highScore: 0 };
+      const prev = userProgress[gameId] || { stars: 0, highScore: 0, level: 1 };
+      const nextLevel = completed ? prev.level + 1 : prev.level;
       userProgress[gameId] = {
         stars: Math.max(prev.stars, stars),
-        highScore: Math.max(prev.highScore, score)
+        highScore: Math.max(prev.highScore, score),
+        level: nextLevel
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(userProgress));
       updateTotalStarsUI();
-      return stars;
+      return { stars, nextLevel };
     }
 
     function updateTotalStarsUI() {
@@ -407,13 +418,17 @@
       }
 
       grid.innerHTML = filtered.map(game => {
-        const prog = userProgress[game.id] || { stars: 0, highScore: 0 };
+        const prog = userProgress[game.id] || { stars: 0, highScore: 0, level: 1 };
+        const currentLvl = prog.level || 1;
         const starDisplay = '⭐'.repeat(prog.stars) + '☆'.repeat(3 - prog.stars);
         return `
           <div onclick="launchGame(${game.id})" class="game-card cursor-pointer bg-white rounded-3xl p-4 border-4 border-white shadow-md flex flex-col justify-between relative overflow-hidden group">
             <div>
-              <div class="h-28 rounded-2xl bg-gradient-to-br ${game.color} flex items-center justify-center text-6xl shadow-inner mb-3 group-hover:scale-105 transition-transform">
+              <div class="h-28 rounded-2xl bg-gradient-to-br ${game.color} flex items-center justify-center text-6xl shadow-inner mb-3 group-hover:scale-105 transition-transform relative">
                 ${game.icon}
+                <span class="absolute top-2 right-2 bg-white/95 text-slate-800 font-display font-bold text-xs px-2.5 py-1 rounded-xl shadow">
+                  Lv. ${currentLvl}
+                </span>
               </div>
               <div class="flex items-center justify-between gap-1 mb-1.5">
                 <span class="text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
@@ -433,7 +448,7 @@
             <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
               <span class="text-xs font-extrabold text-slate-400">Rekor: ${prog.highScore}</span>
               <span class="btn-3d bg-sky-500 group-hover:bg-amber-500 text-white font-display font-bold text-xs px-3.5 py-1.5 rounded-xl">
-                MAIN ▶
+                MAIN LV.${currentLvl} ▶
               </span>
             </div>
           </div>
@@ -450,6 +465,8 @@
       lives: 3,
       round: 0,
       totalRounds: 8,
+      level: 1,
+      roundOrder: [],
       locked: false,
       timerId: null
     };
@@ -462,17 +479,36 @@
       }
     }
 
-    function launchGame(gameId) {
+    // Helper mengambil indeks soal unik berdasarkan level & putaran agar tiap level soalnya berbeda!
+    function getLevelQuestionIndex(totalPoolSize) {
+      if (gameState.roundOrder.length !== totalPoolSize) {
+        const indices = Array.from({ length: totalPoolSize }, (_, i) => i);
+        // Rotasi offset berdasarkan level agar Level 1, 2, 3 selalu dapat soal berbeda dulu
+        const offset = ((gameState.level - 1) * 5) % totalPoolSize;
+        const rotated = [...indices.slice(offset), ...indices.slice(0, offset)];
+        // Acak sisa urutan setelah blok utama level ini
+        const head = rotated.slice(0, Math.min(8, totalPoolSize));
+        const tail = shuffleArray(rotated.slice(Math.min(8, totalPoolSize)));
+        gameState.roundOrder = [...shuffleArray(head), ...tail];
+      }
+      return gameState.roundOrder[gameState.round % totalPoolSize];
+    }
+
+    function launchGame(gameId, forcedLevel = null) {
       playSound('click');
       clearGameTimers();
       currentGame = GAMES_CATALOG.find(g => g.id === gameId);
       if (!currentGame) return;
+
+      const activeLevel = forcedLevel !== null ? forcedLevel : getGameLevel(gameId);
 
       gameState = {
         score: 0,
         lives: 3,
         round: 0,
         totalRounds: 8,
+        level: activeLevel,
+        roundOrder: [],
         locked: false,
         timerId: null
       };
@@ -483,6 +519,8 @@
 
       document.getElementById('arena-icon').textContent = currentGame.icon;
       document.getElementById('arena-title').textContent = currentGame.title;
+      document.getElementById('arena-level-badge').textContent = `Level ${activeLevel}`;
+      setMiniFeedback(`🚀 Tantangan Level ${activeLevel} dimulai!`, true);
       updateArenaHUD();
 
       // Mulai logika spesifik masing-masing game
@@ -498,8 +536,10 @@
       renderGameGrid();
     }
 
-    function replayCurrentGame() {
-      if (currentGame) launchGame(currentGame.id);
+    function nextLevelCurrentGame() {
+      if (currentGame) {
+        launchGame(currentGame.id, getGameLevel(currentGame.id));
+      }
     }
 
     function closeModalAndMenu() {
@@ -511,7 +551,7 @@
       const hearts = '❤️'.repeat(Math.max(0, gameState.lives)) + '🖤'.repeat(Math.max(0, 3 - gameState.lives));
       document.getElementById('arena-lives').textContent = hearts;
       const displayRound = Math.min(gameState.round + 1, gameState.totalRounds);
-      document.getElementById('arena-round-label').textContent = `Ronde ${displayRound} dari ${gameState.totalRounds}`;
+      document.getElementById('arena-round-label').textContent = `Level ${gameState.level} • Ronde ${displayRound} dari ${gameState.totalRounds}`;
       const pct = Math.min(100, Math.round((gameState.round / gameState.totalRounds) * 100));
       document.getElementById('arena-progress-bar').style.width = `${pct}%`;
     }
@@ -558,21 +598,31 @@
       clearGameTimers();
       document.getElementById('arena-progress-bar').style.width = '100%';
       const maxPossible = gameState.totalRounds * 15;
-      const stars = saveGameProgress(currentGame.id, gameState.score, maxPossible);
+      const { stars, nextLevel } = saveGameProgress(currentGame.id, gameState.score, maxPossible, completed);
 
       if (completed && gameState.score > 0) playSound('win');
       else playSound('wrong');
 
       const modal = document.getElementById('result-modal');
+      const nextBtn = document.getElementById('next-level-btn');
+
       document.getElementById('result-emoji').textContent = completed ? (stars === 3 ? '🏆' : '🎉') : '💪';
       document.getElementById('result-heading').textContent = completed
-        ? (stars === 3 ? 'Luar Biasa Sempurna!' : 'Misi Selesai!')
-        : 'Jangan Menyerah!';
+        ? `Level ${gameState.level} Selesai!`
+        : `Gagal di Level ${gameState.level}`;
       document.getElementById('result-message').textContent = completed
-        ? `Kamu berhasil menaklukkan "${currentGame.title}" dengan keren!`
-        : 'Nyawamu habis, tapi kamu sudah berjuang hebat. Ayo coba lagi!';
+        ? `Hebat! Level ${nextLevel} dengan tantangan baru sudah terbuka untukmu!`
+        : `Nyawamu habis di Level ${gameState.level}. Ayo ulangi level ini dengan soal acak baru!`;
       document.getElementById('result-stars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
       document.getElementById('result-final-score').textContent = gameState.score;
+
+      if (completed) {
+        nextBtn.textContent = `🚀 Lanjut ke Level ${nextLevel}`;
+        nextBtn.className = 'btn-3d flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-display font-bold py-3 px-4 rounded-2xl text-base';
+      } else {
+        nextBtn.textContent = `🔄 Ulangi Level ${gameState.level}`;
+        nextBtn.className = 'btn-3d flex-1 bg-amber-500 hover:bg-amber-600 text-white font-display font-bold py-3 px-4 rounded-2xl text-base';
+      }
 
       modal.classList.remove('hidden');
     }
@@ -606,9 +656,15 @@
           { target: '0,8', correct: '4/5', decoys: ['3/4', '1/8', '2/5'] },
           { target: '0,1', correct: '1/10', decoys: ['1/5', '1/2', '2/10'] },
           { target: '3/6', correct: '0,5', decoys: ['0,3', '0,6', '0,25'] },
-          { target: '2/8', correct: '0,25', decoys: ['0,28', '0,5', '0,4'] }
+          { target: '2/8', correct: '0,25', decoys: ['0,28', '0,5', '0,4'] },
+          { target: '0,125', correct: '1/8', decoys: ['1/4', '1/5', '3/8'] },
+          { target: '0,3', correct: '3/10', decoys: ['1/3', '3/5', '2/10'] },
+          { target: '50%', correct: '1/2', decoys: ['1/5', '2/5', '1/4'] },
+          { target: '25%', correct: '0,25', decoys: ['0,5', '2,5', '0,025'] },
+          { target: '3/5', correct: '60%', decoys: ['30%', '35%', '75%'] },
+          { target: '7/10', correct: '0,7', decoys: ['0,07', '7,0', '0,17'] }
         ];
-        const q = bank[gameState.round % bank.length];
+        const q = bank[getLevelQuestionIndex(bank.length)];
         const options = shuffleArray([q.correct, ...q.decoys]);
 
         document.getElementById('game-stage').innerHTML = `
@@ -644,11 +700,14 @@
           { name: 'Susu Kotak', icon: '🧃', price: 3500 },
           { name: 'Bakso Kuah', icon: '🍜', price: 8000 },
           { name: 'Pisang Goreng', icon: '🍌', price: 2000 },
-          { name: 'Soto Ayam', icon: '🍲', price: 7500 }
+          { name: 'Soto Ayam', icon: '🍲', price: 7500 },
+          { name: 'Mie Ayam', icon: '🍝', price: 9000 },
+          { name: 'Jus Alpukat', icon: '🥑', price: 6500 }
         ];
-        const picked = shuffleArray(menu).slice(0, gameState.round % 2 === 0 ? 2 : 3);
+        const itemCount = gameState.level >= 2 ? 3 : (gameState.round % 2 === 0 ? 2 : 3);
+        const picked = shuffleArray(menu).slice(0, itemCount);
         const total = picked.reduce((sum, item) => sum + item.price, 0);
-        const bayar = total <= 10000 ? 10000 : (total <= 15000 ? 15000 : 20000);
+        const bayar = total <= 10000 ? 10000 : (total <= 15000 ? 15000 : (total <= 20000 ? 20000 : 25000));
         const kembalian = bayar - total;
 
         const choices = shuffleArray([
@@ -698,16 +757,17 @@
          ---------------------------------------------------------------------- */
       3: function () {
         gameState.totalRounds = 8;
-        const isMult = gameState.round % 2 === 0;
+        const isMult = (gameState.round + gameState.level) % 2 === 0;
+        const diffBoost = Math.min(6, (gameState.level - 1) * 2);
         let qText = '', ans = 0;
         if (isMult) {
-          const a = Math.floor(Math.random() * 8) + 4;
-          const b = Math.floor(Math.random() * 8) + 3;
+          const a = Math.floor(Math.random() * 8) + 4 + diffBoost;
+          const b = Math.floor(Math.random() * 8) + 3 + Math.floor(diffBoost / 2);
           ans = a * b;
           qText = `${a} × ${b} = ?`;
         } else {
-          const b = Math.floor(Math.random() * 7) + 3;
-          ans = Math.floor(Math.random() * 8) + 4;
+          const b = Math.floor(Math.random() * 7) + 3 + Math.floor(diffBoost / 2);
+          ans = Math.floor(Math.random() * 8) + 4 + diffBoost;
           const a = b * ans;
           qText = `${a} ÷ ${b} = ?`;
         }
@@ -752,9 +812,13 @@
           { name: 'Segitiga', ask: 'Luas', a: 10, t: 6, ans: 30, unit: 'cm²', svg: '<polygon points="100,15 35,100 165,100" fill="#fb7185" stroke="#e11d48" stroke-width="4"/><text x="100" y="120" text-anchor="middle" font-weight="bold" fill="#0f172a">alas = 10 cm, tinggi = 6 cm</text>' },
           { name: 'Segitiga Sama Sisi', ask: 'Keliling', s: 8, ans: 24, unit: 'cm', svg: '<polygon points="100,15 40,100 160,100" fill="#2dd4bf" stroke="#0d9488" stroke-width="4"/><text x="100" y="120" text-anchor="middle" font-weight="bold" fill="#0f172a">sisi = 8 cm</text>' },
           { name: 'Persegi', ask: 'Luas', s: 11, ans: 121, unit: 'cm²', svg: '<rect x="55" y="15" width="90" height="90" rx="8" fill="#60a5fa" stroke="#2563eb" stroke-width="4"/><text x="100" y="122" text-anchor="middle" font-weight="bold" fill="#0f172a">s = 11 cm</text>' },
-          { name: 'Persegi Panjang', ask: 'Luas', p: 12, l: 4, ans: 48, unit: 'cm²', svg: '<rect x="25" y="28" width="150" height="65" rx="8" fill="#f472b6" stroke="#db2777" stroke-width="4"/><text x="100" y="115" text-anchor="middle" font-weight="bold" fill="#0f172a">p = 12 cm, l = 4 cm</text>' }
+          { name: 'Persegi Panjang', ask: 'Luas', p: 12, l: 4, ans: 48, unit: 'cm²', svg: '<rect x="25" y="28" width="150" height="65" rx="8" fill="#f472b6" stroke="#db2777" stroke-width="4"/><text x="100" y="115" text-anchor="middle" font-weight="bold" fill="#0f172a">p = 12 cm, l = 4 cm</text>' },
+          { name: 'Persegi', ask: 'Keliling', s: 15, ans: 60, unit: 'cm', svg: '<rect x="55" y="15" width="90" height="90" rx="8" fill="#fb923c" stroke="#ea580c" stroke-width="4"/><text x="100" y="122" text-anchor="middle" font-weight="bold" fill="#0f172a">s = 15 cm</text>' },
+          { name: 'Segitiga', ask: 'Luas', a: 14, t: 8, ans: 56, unit: 'cm²', svg: '<polygon points="100,15 35,100 165,100" fill="#818cf8" stroke="#4f46e5" stroke-width="4"/><text x="100" y="120" text-anchor="middle" font-weight="bold" fill="#0f172a">alas = 14 cm, tinggi = 8 cm</text>' },
+          { name: 'Persegi Panjang', ask: 'Keliling', p: 14, l: 6, ans: 40, unit: 'cm', svg: '<rect x="25" y="25" width="150" height="75" rx="8" fill="#4ade80" stroke="#16a34a" stroke-width="4"/><text x="100" y="118" text-anchor="middle" font-weight="bold" fill="#0f172a">p = 14 cm, l = 6 cm</text>' },
+          { name: 'Persegi', ask: 'Luas', s: 13, ans: 169, unit: 'cm²', svg: '<rect x="55" y="15" width="90" height="90" rx="8" fill="#facc15" stroke="#ca8a04" stroke-width="4"/><text x="100" y="122" text-anchor="middle" font-weight="bold" fill="#0f172a">s = 13 cm</text>' }
         ];
-        const item = shapes[gameState.round % shapes.length];
+        const item = shapes[getLevelQuestionIndex(shapes.length)];
         const opts = shuffleArray([item.ans, item.ans + 6, Math.max(4, item.ans - 4), item.ans + 10]);
 
         document.getElementById('game-stage').innerHTML = `
@@ -793,9 +857,13 @@
           { seq: [10, 20, 35, 55, '?'], ans: 80, hint: '+10, +15, +20, +25' },
           { seq: [100, 91, 82, '?', 64], ans: 73, hint: 'Berkurang 9' },
           { seq: [2, 6, 18, '?', 162], ans: 54, hint: 'Dikali 3' },
-          { seq: [7, 14, 21, 28, '?'], ans: 35, hint: 'Kelipatan 7' }
+          { seq: [7, 14, 21, 28, '?'], ans: 35, hint: 'Kelipatan 7' },
+          { seq: [1, 1, 2, 3, 5, '?'], ans: 8, hint: 'Deret Fibonacci' },
+          { seq: [80, 40, 20, '?', 5], ans: 10, hint: 'Dibagi 2' },
+          { seq: [11, 22, 33, '?', 55], ans: 44, hint: 'Loncat +11' },
+          { seq: [5, 11, 17, 23, '?'], ans: 29, hint: 'Loncat +6' }
         ];
-        const p = patterns[gameState.round % patterns.length];
+        const p = patterns[getLevelQuestionIndex(patterns.length)];
         const opts = shuffleArray([p.ans, p.ans + 4, Math.max(1, p.ans - 3), p.ans + 8]);
 
         document.getElementById('game-stage').innerHTML = `
@@ -837,14 +905,20 @@
           { name: 'Lampu Neon Pecah', icon: '💡', type: 'B3' },
           { name: 'Sisa Tulang Ikan', icon: '🐟', type: 'Organik' },
           { name: 'Kardus Bekas', icon: '📦', type: 'Anorganik' },
-          { name: 'Obat Kadaluarsa', icon: '💊', type: 'B3' }
+          { name: 'Obat Kadaluarsa', icon: '💊', type: 'B3' },
+          { name: 'Cangkang Telur', icon: '🥚', type: 'Organik' },
+          { name: 'Gelas Kaca Pecah', icon: '🥛', type: 'Anorganik' },
+          { name: 'Kaleng Cat Semprot', icon: '🎨', type: 'B3' },
+          { name: 'Sisa Nasi & Sayur', icon: '🍚', type: 'Organik' },
+          { name: 'Koran & Majalah Lama', icon: '📰', type: 'Anorganik' },
+          { name: 'Termometer Merkuri Rusak', icon: '🌡️', type: 'B3' }
         ];
-        const current = items[gameState.round % items.length];
+        const current = items[getLevelQuestionIndex(items.length)];
 
         document.getElementById('game-stage').innerHTML = `
           <div class="text-center animate-pop">
-            <span class="bg-emerald-100 text-emerald-800 px-4 py-1 rounded-full font-extrabold text-sm">
-              ♻️ Pahlawan Lingkungan Bersih
+            <span class="bg-green-100 text-green-800 px-4 py-1 rounded-full font-extrabold text-sm">
+              ♻️ Pahlawan Kebersihan Lingkungan
             </span>
             <div class="my-6 bg-slate-50 border-4 border-dashed border-emerald-300 rounded-3xl p-6">
               <div class="text-7xl mb-2 animate-float">${current.icon}</div>
@@ -882,9 +956,13 @@
           { clue: 'Planet terbesar di Tata Surya dan memiliki Bintik Merah Raksasa.', ans: 'Jupiter', opts: ['Jupiter', 'Saturnus', 'Uranus', 'Neptunus'] },
           { clue: 'Terkenal memiliki cincin es dan debu yang sangat indah dan lebar.', ans: 'Saturnus', opts: ['Saturnus', 'Uranus', 'Jupiter', 'Neptunus'] },
           { clue: 'Planet ke-7 dari Matahari yang berotasi miring seperti menggelinding.', ans: 'Uranus', opts: ['Uranus', 'Neptunus', 'Saturnus', 'Mars'] },
-          { clue: 'Planet terjauh dari Matahari yang berwarna biru cerah dan berangin kencang.', ans: 'Neptunus', opts: ['Neptunus', 'Uranus', 'Jupiter', 'Venus'] }
+          { clue: 'Planet terjauh dari Matahari yang berwarna biru cerah dan berangin kencang.', ans: 'Neptunus', opts: ['Neptunus', 'Uranus', 'Jupiter', 'Venus'] },
+          { clue: 'Benda langit yang menjadi pusat Tata Surya dan memancarkan cahayanya sendiri.', ans: 'Matahari', opts: ['Matahari', 'Bulan', 'Jupiter', 'Bintang Utara'] },
+          { clue: 'Satelit alami yang mengelilingi Bumi dan memengaruhi pasang surut air laut.', ans: 'Bulan', opts: ['Bulan', 'Phobos', 'Titan', 'Europa'] },
+          { clue: 'Benda langit kecil berbatu yang banyak mengorbit di antara Mars dan Jupiter.', ans: 'Asteroid', opts: ['Asteroid', 'Komet', 'Satelit', 'Galaksi'] },
+          { clue: 'Benda langit berekor cahaya panjang yang tersusun dari es dan debu saat mendekati Matahari.', ans: 'Komet', opts: ['Komet', 'Meteoroid', 'Planet Kerdil', 'Bulan'] }
         ];
-        const q = planets[gameState.round % planets.length];
+        const q = planets[getLevelQuestionIndex(planets.length)];
         const opts = shuffleArray(q.opts);
 
         document.getElementById('game-stage').innerHTML = `
@@ -919,9 +997,11 @@
           { seq: ['🌊 Fitoplankton', '🦐 Udang', '🐟 Ikan Tuna', '🦈 Hiu'], q: 'Siapakah Konsumen Puncak pada ekosistem laut ini?', ans: '🦈 Hiu' },
           { seq: ['🌽 Jagung', '🐔 Ayam', '🦊 Musang', '🦠 Bakteri'], q: 'Manakah yang berperan sebagai Produsen penghasil makanan?', ans: '🌽 Jagung' },
           { seq: ['🌿 Tumbuhan Air', '🐌 Siput', '🦆 Bebek', '🐊 Buaya'], q: 'Siapakah Konsumen Tingkat 2?', ans: '🦆 Bebek' },
-          { seq: ['🌳 Pohon', '🐒 Monyet', '🐆 Macan Tutul', '🍄 Jamur'], q: 'Jika Macan Tutul mati, tubuhnya diuraikan oleh...', ans: '🍄 Jamur' }
+          { seq: ['🌳 Pohon', '🐒 Monyet', '🐆 Macan Tutul', '🍄 Jamur'], q: 'Jika Macan Tutul mati, tubuhnya diuraikan oleh...', ans: '🍄 Jamur' },
+          { seq: ['🥬 Sawi', '🐇 Kelinci', '🐺 Serigala', '🦁 Singa'], q: 'Siapakah yang merupakan hewan herbivora pada rantai di atas?', ans: '🐇 Kelinci' },
+          { seq: ['🌾 Lumut', '🐟 Ikan Kecil', '🐧 Penguin', '🦭 Singa Laut'], q: 'Siapakah Konsumen Tingkat 3?', ans: '🦭 Singa Laut' }
         ];
-        const c = chains[gameState.round % chains.length];
+        const c = chains[getLevelQuestionIndex(chains.length)];
         const opts = shuffleArray(c.seq);
 
         document.getElementById('game-stage').innerHTML = `
@@ -958,9 +1038,13 @@
           { story: 'Kapur barus (kamper) di dalam lemari pakaian lama-lama mengecil dan habis.', ans: 'Menyublim', icon: '⚪➡️💨' },
           { story: 'Air yang dipanaskan di dalam panci hingga mendidih mengeluarkan banyak uap.', ans: 'Menguap', icon: '♨️➡️💨' },
           { story: 'Mentega yang dipanaskan di atas wajan berubah menjadi cair.', ans: 'Mencair', icon: '🧈➡️💧' },
-          { story: 'Di pagi hari yang dingin, daun-daun di taman dipenuhi titik embun air.', ans: 'Mengembun', icon: '🍃➡️💧' }
+          { story: 'Di pagi hari yang dingin, daun-daun di taman dipenuhi titik embun air.', ans: 'Mengembun', icon: '🍃➡️💧' },
+          { story: 'Lilin yang dinyalakan lama-lama meleleh menjadi cairan lilin.', ans: 'Mencair', icon: '🕯️➡️💧' },
+          { story: 'Cairan agar-agar panas yang didiamkan di cetakan menjadi kenyal dan padat.', ans: 'Membeku', icon: '🍮➡️🧊' },
+          { story: 'Dry ice (es kering) yang diletakkan di panggung langsung mengeluarkan asap gas.', ans: 'Menyublim', icon: '🧊➡️💨' },
+          { story: 'Minyak wangi yang disemprotkan ke ruangan lama-kelamaan habis mengudara.', ans: 'Menguap', icon: '🧴➡️💨' }
         ];
-        const q = cases[gameState.round % cases.length];
+        const q = cases[getLevelQuestionIndex(cases.length)];
         const opts = shuffleArray(['Mencair', 'Membeku', 'Menguap', 'Mengembun', 'Menyublim']).slice(0, 4);
         if (!opts.includes(q.ans)) opts[0] = q.ans;
         const finalOpts = shuffleArray(opts);
@@ -1000,9 +1084,13 @@
           { q: 'Saluran yang menghubungkan rongga mulut dengan lambung disebut...', ans: 'Kerongkongan (Esofagus)', opts: ['Kerongkongan (Esofagus)', 'Tenggorokan (Trakea)', 'Bronkus', 'Usus Buntu'] },
           { q: 'Penyerapan kembali air dan pembusukan sisa makanan terjadi di...', ans: 'Usus Besar', opts: ['Usus Besar', 'Lambung', 'Paru-paru', 'Pankreas'] },
           { q: 'Otot sekat yang memisahkan rongga dada dan rongga perut saat bernapas adalah...', ans: 'Diafragma', opts: ['Diafragma', 'Epiglotis', 'Alveolus', 'Faring'] },
-          { q: 'Gigi yang berfungsi untuk mengunyah dan menghaluskan makanan adalah gigi...', ans: 'Geraham', opts: ['Geraham', 'Seri', 'Taring', 'Susu'] }
+          { q: 'Gigi yang berfungsi untuk mengunyah dan menghaluskan makanan adalah gigi...', ans: 'Geraham', opts: ['Geraham', 'Seri', 'Taring', 'Susu'] },
+          { q: 'Enzim ptialin yang mengubah zat tepung menjadi gula terdapat di dalam...', ans: 'Air Liur (Mulut)', opts: ['Air Liur (Mulut)', 'Usus Besar', 'Paru-paru', 'Kerongkongan'] },
+          { q: 'Cabang batang tenggorokan yang menuju ke paru-paru kanan dan kiri disebut...', ans: 'Bronkus', opts: ['Bronkus', 'Alveolus', 'Esofagus', 'Diafragma'] },
+          { q: 'Organ yang menghasilkan cairan empedu untuk membantu mencerna lemak adalah...', ans: 'Hati', opts: ['Hati', 'Jantung', 'Ginjal', 'Paru-paru'] },
+          { q: 'Gerakan meremas-remas makanan di dalam kerongkongan menuju lambung disebut gerak...', ans: 'Peristaltik', opts: ['Peristaltik', 'Respirasi', 'Sirkulasi', 'Refleks'] }
         ];
-        const q = organs[gameState.round % organs.length];
+        const q = organs[getLevelQuestionIndex(organs.length)];
         const opts = shuffleArray(q.opts);
 
         document.getElementById('game-stage').innerHTML = `
@@ -1039,9 +1127,13 @@
           { baku: 'Kreativitas', non: ['Kreatifitas', 'Kreatipitas', 'Kreativ'] },
           { baku: 'Praktik', non: ['Praktek', 'Praktiek', 'Prakteq'] },
           { baku: 'Cabai', non: ['Cabe', 'Cabay', 'Chabe'] },
-          { baku: 'Jadwal', non: ['Jadual', 'Jatwal', 'Jadwaal'] }
+          { baku: 'Jadwal', non: ['Jadual', 'Jatwal', 'Jadwaal'] },
+          { baku: 'Atlet', non: ['Atlit', 'Athlit', 'Atleet'] },
+          { baku: 'Risiko', non: ['Resiko', 'Risico', 'Resico'] },
+          { baku: 'Sistem', non: ['Sistim', 'Systim', 'Sisteem'] },
+          { baku: 'Teknik', non: ['Tehnik', 'Tekhnik', 'Teqnik'] }
         ];
-        const p = pairs[gameState.round % pairs.length];
+        const p = pairs[getLevelQuestionIndex(pairs.length)];
         const opts = shuffleArray([p.baku, ...p.non]);
 
         document.getElementById('game-stage').innerHTML = `
@@ -1078,9 +1170,11 @@
           { type: 'Peribahasa', text: 'Arti peribahasa "Besar pasak daripada tiang" adalah...', ans: 'Pengeluaran lebih besar daripada pendapatan', opts: ['Pengeluaran lebih besar daripada pendapatan', 'Rumah yang sangat megah', 'Orang yang sombong', 'Suka menabung setiap hari'] },
           { type: 'Peribahasa', text: 'Arti peribahasa "Tong kosong nyaring bunyinya" adalah...', ans: 'Orang yang sedikit ilmunya biasanya banyak bicara', opts: ['Orang yang sedikit ilmunya biasanya banyak bicara', 'Alat musik yang merdu', 'Suasana kelas yang sepi', 'Orang yang pendiam tapi pintar'] },
           { type: 'Pantun', text: 'Pagi-pagi minum jamu,\nDuduk santai di atas batu.\nRajinlah menuntut ilmu,\n.........................', ans: 'Untuk bekal masa depanmu.', opts: ['Untuk bekal masa depanmu.', 'Jangan lupa pakai sepatu.', 'Beli buku di toko satu.', 'Ayo kita bermain gundu.'] },
-          { type: 'Peribahasa', text: 'Arti peribahasa "Sedikit demi sedikit, lama-lama menjadi bukit" adalah...', ans: 'Usaha atau tabungan kecil yang tekun akan menjadi besar', opts: ['Usaha atau tabungan kecil yang tekun akan menjadi besar', 'Mendaki gunung bersama teman', 'Membuang sampah sembarangan', 'Bekerja terburu-buru'] }
+          { type: 'Peribahasa', text: 'Arti peribahasa "Sedikit demi sedikit, lama-lama menjadi bukit" adalah...', ans: 'Usaha atau tabungan kecil yang tekun akan menjadi besar', opts: ['Usaha atau tabungan kecil yang tekun akan menjadi besar', 'Mendaki gunung bersama teman', 'Membuang sampah sembarangan', 'Bekerja terburu-buru'] },
+          { type: 'Peribahasa', text: 'Arti peribahasa "Ada udang di balik batu" adalah...', ans: 'Ada maksud tersembunyi di balik suatu perbuatan', opts: ['Ada maksud tersembunyi di balik suatu perbuatan', 'Nelayan yang rajin mencari ikan', 'Suka makan udang goreng', 'Bekerja tanpa pamrih'] },
+          { type: 'Pantun', text: 'Bunga melati harum baunya,\nTumbuh mekar di tepi taman.\nHormati guru dan orang tua,\n.........................', ans: 'Agar hidup penuh keberkahan.', opts: ['Agar hidup penuh keberkahan.', 'Mari kita makan rambutan.', 'Pergi bermain ke lapangan.', 'Beli pensil di toko depan.'] }
         ];
-        const q = items[gameState.round % items.length];
+        const q = items[getLevelQuestionIndex(items.length)];
         const opts = shuffleArray(q.opts);
 
         document.getElementById('game-stage').innerHTML = `
@@ -1117,9 +1211,13 @@
           { en: 'Orange Carrot', icon: '🥕' },
           { en: 'Cheese Slice', icon: '🧀' },
           { en: 'Chicken Egg', icon: '🥚' },
-          { en: 'Strawberry Cake', icon: '🍰' }
+          { en: 'Strawberry Cake', icon: '🍰' },
+          { en: 'Purple Grapes', icon: '🍇' },
+          { en: 'Yellow Pineapple', icon: '🍍' },
+          { en: 'Hot Pizza Slice', icon: '🍕' },
+          { en: 'Green Broccoli', icon: '🥦' }
         ];
-        const target = catalog[gameState.round % catalog.length];
+        const target = catalog[getLevelQuestionIndex(catalog.length)];
         const decoys = shuffleArray(catalog.filter(i => i.en !== target.en)).slice(0, 3);
         const opts = shuffleArray([target, ...decoys]);
 
@@ -1158,9 +1256,12 @@
           { words: ['We', 'must', 'keep', 'our', 'class', 'clean'], meaning: 'Kita harus menjaga kelas kita tetap bersih' },
           { words: ['The', 'cat', 'is', 'sleeping', 'on', 'the', 'sofa'], meaning: 'Kucing itu sedang tidur di atas sofa' },
           { words: ['He', 'drinks', 'a', 'glass', 'of', 'water'], meaning: 'Dia minum segelas air' },
-          { words: ['Birds', 'can', 'fly', 'high', 'in', 'the', 'sky'], meaning: 'Burung-burung bisa terbang tinggi di langit' }
+          { words: ['Birds', 'can', 'fly', 'high', 'in', 'the', 'sky'], meaning: 'Burung-burung bisa terbang tinggi di langit' },
+          { words: ['We', 'love', 'our', 'beautiful', 'country', 'Indonesia'], meaning: 'Kami mencintai negara kami yang indah Indonesia' },
+          { words: ['My', 'father', 'drives', 'a', 'blue', 'car'], meaning: 'Ayahku mengendarai sebuah mobil biru' },
+          { words: ['The', 'students', 'are', 'studying', 'English', 'now'], meaning: 'Para siswa sedang belajar Bahasa Inggris sekarang' }
         ];
-        const current = sentences[gameState.round % sentences.length];
+        const current = sentences[getLevelQuestionIndex(sentences.length)];
         const scrambled = shuffleArray(current.words.map((w, idx) => ({ w, idx })));
         let selected = [];
 
@@ -1258,9 +1359,13 @@
           { q: 'Rumah adat Honai yang berbentuk bundar dengan atap jerami berasal dari...', ans: 'Papua', opts: ['Papua', 'Nusa Tenggara Timur', 'Maluku', 'Kalimantan Barat'] },
           { q: 'Makanan khas Pempek dengan kuah cuko asam manis pedas berasal dari...', ans: 'Sumatera Selatan', opts: ['Sumatera Selatan', 'Bangka Belitung', 'Bengkulu', 'Banten'] },
           { q: 'Alat musik tradisional Angklung yang terbuat dari bambu berasal dari provinsi...', ans: 'Jawa Barat', opts: ['Jawa Barat', 'Jawa Timur', 'DI Yogyakarta', 'Banten'] },
-          { q: 'Gudeg yang terbuat dari nangka muda manis adalah makanan khas dari...', ans: 'DI Yogyakarta', opts: ['DI Yogyakarta', 'Jawa Barat', 'Bali', 'Kalimantan Selatan'] }
+          { q: 'Gudeg yang terbuat dari nangka muda manis adalah makanan khas dari...', ans: 'DI Yogyakarta', opts: ['DI Yogyakarta', 'Jawa Barat', 'Bali', 'Kalimantan Selatan'] },
+          { q: 'Rumah Gadang dengan atap runcing menyerupai tanduk kerbau berasal dari...', ans: 'Sumatera Barat', opts: ['Sumatera Barat', 'Riau', 'Sumatera Utara', 'Jambi'] },
+          { q: 'Tari Piring yang penarinya membawa piring di telapak tangan berasal dari...', ans: 'Sumatera Barat', opts: ['Sumatera Barat', 'Kalimantan Barat', 'Sulawesi Tengah', 'Lampung'] },
+          { q: 'Makanan khas Papeda yang terbuat dari sagu dan disantap dengan ikan kuah kuning berasal dari...', ans: 'Papua & Maluku', opts: ['Papua & Maluku', 'Jawa Timur', 'Bali', 'Nusa Tenggara Barat'] },
+          { q: 'Kesenian Reog yang terkenal dengan topeng kepala singa berbulu merak berasal dari...', ans: 'Ponorogo (Jawa Timur)', opts: ['Ponorogo (Jawa Timur)', 'Solo (Jawa Tengah)', 'Bandung (Jawa Barat)', 'Denpasar (Bali)'] }
         ];
-        const q = culture[gameState.round % culture.length];
+        const q = culture[getLevelQuestionIndex(culture.length)];
         const opts = shuffleArray(q.opts);
 
         document.getElementById('game-stage').innerHTML = `
@@ -1297,9 +1402,12 @@
           { q: 'Pahlawan dari Makassar yang dijuluki "Ayam Jantan dari Timur" adalah...', ans: 'Sultan Hasanuddin', opts: ['Sultan Hasanuddin', 'Pangeran Antasari', 'Kapitan Pattimura', 'Teuku Umar'] },
           { q: 'Tokoh yang membakar semangat arek-arek Surabaya pada pertempuran 10 November 1945 adalah...', ans: 'Bung Tomo', opts: ['Bung Tomo', 'Moh. Yamin', 'Ahmad Soebardjo', 'Sayuti Melik'] },
           { q: 'Siapakah penjahit bendera Merah Putih pusaka yang dikibarkan saat Proklamasi 17 Agustus 1945?', ans: 'Ibu Fatmawati', opts: ['Ibu Fatmawati', 'R.A. Kartini', 'Cut Meutia', 'Martha Christina Tiahahu'] },
-          { q: 'Pahlawan nasional dari Maluku yang memimpin perlawanan di Benteng Duurstede adalah...', ans: 'Kapitan Pattimura', opts: ['Kapitan Pattimura', 'Sultan Ageng Tirtayasa', 'Pangeran Diponegoro', 'Cut Nyak Dien'] }
+          { q: 'Pahlawan nasional dari Maluku yang memimpin perlawanan di Benteng Duurstede adalah...', ans: 'Kapitan Pattimura', opts: ['Kapitan Pattimura', 'Sultan Ageng Tirtayasa', 'Pangeran Diponegoro', 'Cut Nyak Dien'] },
+          { q: 'Siapakah Wakil Presiden pertama Indonesia yang juga dijuluki Bapak Koperasi Indonesia?', ans: 'Drs. Moh. Hatta', opts: ['Drs. Moh. Hatta', 'Adam Malik', 'Sri Sultan Hamengkubuwono IX', 'Sutan Sjahrir'] },
+          { q: 'Pahlawan wanita asal Aceh yang gigih memimpin pasukan melawan penjajah Belanda adalah...', ans: 'Cut Nyak Dien', opts: ['Cut Nyak Dien', 'Dewi Sartika', 'Nyi Ageng Serang', 'Rasuna Said'] },
+          { q: 'Pahlawan dari Yogyakarta yang memimpin Perang Jawa (1825–1830) adalah...', ans: 'Pangeran Diponegoro', opts: ['Pangeran Diponegoro', 'Sultan Agung', 'Untung Suropati', 'Pangeran Antasari'] }
         ];
-        const q = heroes[gameState.round % heroes.length];
+        const q = heroes[getLevelQuestionIndex(heroes.length)];
         const opts = shuffleArray(q.opts);
 
         document.getElementById('game-stage').innerHTML = `
@@ -1336,9 +1444,12 @@
           { item: '🍩 Donat Cokelat', modal: 3000, targetUntung: 1000, ans: 4000, opts: [4000, 2500, 3000, 3500] },
           { item: '🥤 Es Teh Lemon', modal: 2500, targetUntung: 1500, ans: 4000, opts: [4000, 2000, 2500, 3000] },
           { item: '🌮 Lumpia Sayur', modal: 3500, targetUntung: 2000, ans: 5500, opts: [5500, 3500, 3000, 4500] },
-          { item: '🍮 Puding Susu', modal: 4000, targetUntung: 1500, ans: 5500, opts: [5500, 3500, 4000, 4500] }
+          { item: '🍮 Puding Susu', modal: 4000, targetUntung: 1500, ans: 5500, opts: [5500, 3500, 4000, 4500] },
+          { item: '🍔 Burger Mini', modal: 6500, targetUntung: 2500, ans: 9000, opts: [9000, 6500, 6000, 8000] },
+          { item: '🥞 Panekuk Madu', modal: 5500, targetUntung: 2000, ans: 7500, opts: [7500, 5500, 5000, 7000] },
+          { item: '🍿 Popcorn Karamel', modal: 3000, targetUntung: 2000, ans: 5000, opts: [5000, 3000, 2500, 4500] }
         ];
-        const q = biz[gameState.round % biz.length];
+        const q = biz[getLevelQuestionIndex(biz.length)];
         const opts = shuffleArray(q.opts);
 
         document.getElementById('game-stage').innerHTML = `
@@ -1375,14 +1486,20 @@
          ---------------------------------------------------------------------- */
       18: function () {
         gameState.totalRounds = 8;
-        const words = ['NUSANTARA', 'MATAHARI', 'SAHABAT', 'PRESTASI', 'INDONESIA', 'SEMANGAT', 'KREATIF', 'PANCASILA', 'BELAJAR', 'JUARA'];
-        const targetWord = words[gameState.round % words.length];
+        const wordsByLevel = [
+          ['NUSANTARA', 'MATAHARI', 'SAHABAT', 'PRESTASI', 'INDONESIA', 'SEMANGAT', 'KREATIF', 'PANCASILA', 'BELAJAR', 'JUARA'],
+          ['PERPUSTAKAAN', 'MATEMATIKA', 'LINGKUNGAN', 'KEBERSAMAAN', 'PERSAHABATAN', 'KEMERDEKAAN', 'PETUALANGAN', 'PENGETAHUAN', 'KEBERANIAN', 'KEJUJURAN'],
+          ['PROKLAMASI', 'KHATULISTIWA', 'KEBUDAYAAN', 'TANGGUNGJAWAB', 'GOTONGROYONG', 'PENDIDIKAN', 'TEKNOLOGI', 'ASTRONOMI', 'EKOSISTEM', 'BHINNEKA']
+        ];
+        const pool = wordsByLevel[(gameState.level - 1) % wordsByLevel.length];
+        const targetWord = pool[gameState.round % pool.length];
         let timeLeft = 100; // Persentase ketinggian balon
+        const speedDrop = Math.min(2.4, 1.4 + (gameState.level - 1) * 0.25);
 
         document.getElementById('game-stage').innerHTML = `
           <div class="text-center animate-pop">
             <span class="bg-pink-100 text-pink-800 px-4 py-1 rounded-full font-extrabold text-sm">
-              🎈 Ketik Cepat Sebelum Balon Terbang!
+              🎈 Ketik Kata Sebelum Balon Terbang Tinggi!
             </span>
 
             <div class="relative h-48 bg-gradient-to-b from-sky-200 to-sky-50 rounded-3xl my-4 border-4 border-sky-300 overflow-hidden flex items-center justify-center">
@@ -1413,7 +1530,7 @@
 
         clearGameTimers();
         gameState.timerId = setInterval(() => {
-          timeLeft -= 1.5;
+          timeLeft -= speedDrop;
           const offsetY = 35 - ((100 - timeLeft) * 0.95);
           if (balloonEl) balloonEl.style.transform = `translateY(${offsetY}px)`;
           if (timeLeft <= 0) {
@@ -1434,22 +1551,27 @@
          GAME 19: Memory Card Nusantara (Ketangkasan & Logika)
          ---------------------------------------------------------------------- */
       19: function () {
-        // Game memori 12 kartu (6 pasang alat musik & daerah asalnya)
-        gameState.totalRounds = 6; // 6 pasangan = selesai
-        const pairs = [
-          { pairId: 1, label: '🥁 Tifa', sub: 'Alat Musik' },
-          { pairId: 1, label: '🏝️ Papua', sub: 'Daerah Asal' },
-          { pairId: 2, label: '🎋 Angklung', sub: 'Alat Musik' },
-          { pairId: 2, label: '⛰️ Jawa Barat', sub: 'Daerah Asal' },
-          { pairId: 3, label: '🎸 Sasando', sub: 'Alat Musik' },
-          { pairId: 3, label: '🌊 NTT', sub: 'Daerah Asal' },
-          { pairId: 4, label: '🎹 Kolintang', sub: 'Alat Musik' },
-          { pairId: 4, label: '🌴 Sulut', sub: 'Daerah Asal' },
-          { pairId: 5, label: '🔔 Gamelan', sub: 'Alat Musik' },
-          { pairId: 5, label: '🏛️ Jawa Tengah', sub: 'Daerah Asal' },
-          { pairId: 6, label: '🎶 Saluang', sub: 'Alat Musik' },
-          { pairId: 6, label: '🏠 Sumbar', sub: 'Daerah Asal' }
+        // Game memori 12 kartu (6 pasang per level, berganti set setiap naik level!)
+        gameState.totalRounds = 6;
+        const levelDecks = [
+          [
+            { pairId: 1, label: '🥁 Tifa', sub: 'Alat Musik' }, { pairId: 1, label: '🏝️ Papua', sub: 'Daerah Asal' },
+            { pairId: 2, label: '🎋 Angklung', sub: 'Alat Musik' }, { pairId: 2, label: '⛰️ Jawa Barat', sub: 'Daerah Asal' },
+            { pairId: 3, label: '🎸 Sasando', sub: 'Alat Musik' }, { pairId: 3, label: '🌊 NTT', sub: 'Daerah Asal' },
+            { pairId: 4, label: '🎹 Kolintang', sub: 'Alat Musik' }, { pairId: 4, label: '🌴 Sulut', sub: 'Daerah Asal' },
+            { pairId: 5, label: '🔔 Gamelan', sub: 'Alat Musik' }, { pairId: 5, label: '🏛️ Jawa Tengah', sub: 'Daerah Asal' },
+            { pairId: 6, label: '🎶 Saluang', sub: 'Alat Musik' }, { pairId: 6, label: '🏠 Sumbar', sub: 'Daerah Asal' }
+          ],
+          [
+            { pairId: 1, label: '🏠 Tongkonan', sub: 'Rumah Adat' }, { pairId: 1, label: '⛵ Sulsel', sub: 'Provinsi' },
+            { pairId: 2, label: '🏛️ Joglo', sub: 'Rumah Adat' }, { pairId: 2, label: '🌋 Yogyakarta', sub: 'Provinsi' },
+            { pairId: 3, label: '🏡 Gadang', sub: 'Rumah Adat' }, { pairId: 3, label: '🌶️ Sumbar', sub: 'Provinsi' },
+            { pairId: 4, label: '🛖 Honai', sub: 'Rumah Adat' }, { pairId: 4, label: '🦜 Papua', sub: 'Provinsi' },
+            { pairId: 5, label: '🏘️ Lamin', sub: 'Rumah Adat' }, { pairId: 5, label: '🦧 Kaltim', sub: 'Provinsi' },
+            { pairId: 6, label: '⛩️ Gapura Candi', sub: 'Arsitektur' }, { pairId: 6, label: '🌺 Bali', sub: 'Provinsi' }
+          ]
         ];
+        const pairs = levelDecks[(gameState.level - 1) % levelDecks.length];
 
         const deck = shuffleArray(pairs.map((c, idx) => ({ ...c, uid: idx, flipped: false, matched: false })));
         let flippedCards = [];
@@ -1551,9 +1673,11 @@
           { q: 'Jika ada teman yang diejek atau dirundung (cyberbullying) di grup chat, sebaiknya kita...', ans: 'Membela dengan sopan dan melapor kepada guru/orang tua', opts: ['Membela dengan sopan dan melapor kepada guru/orang tua', 'Ikut menertawakan dan mengejek', 'Merekam layar untuk disebar', 'Diam dan ikut membully'] },
           { q: 'Informasi pribadi manakah yang TIDAK BOLEH dibagikan secara publik di internet?', ans: 'Password akun, alamat rumah, dan nomor telepon', opts: ['Password akun, alamat rumah, dan nomor telepon', 'Hobi membaca buku cerita', 'Warna kesukaanmu', 'Nama hewan peliharaan kartun'] },
           { q: 'Kamu melihat pop-up bertuliskan "Selamat! Kamu menang HP gratis, klik dan isi data pribadi!". Ini adalah...', ans: 'Penipuan digital (Phishing) yang harus ditutup', opts: ['Penipuan digital (Phishing) yang harus ditutup', 'Hadiah resmi dari sekolah', 'Undian berhadiah asli', 'Tugas sekolah online'] },
-          { q: 'Etika berkomentar yang baik di internet (Netiket) adalah...', ans: 'Menggunakan bahasa yang sopan dan menghargai orang lain', opts: ['Menggunakan bahasa yang sopan dan menghargai orang lain', 'Menulis dengan huruf kapital semua sambil marah', 'Mengejek karya orang lain', 'Menyebar rahasia teman'] }
+          { q: 'Etika berkomentar yang baik di internet (Netiket) adalah...', ans: 'Menggunakan bahasa yang sopan dan menghargai orang lain', opts: ['Menggunakan bahasa yang sopan dan menghargai orang lain', 'Menulis dengan huruf kapital semua sambil marah', 'Mengejek karya orang lain', 'Menyebar rahasia teman'] },
+          { q: 'Mengapa kita tidak boleh memakai satu password yang sama untuk semua akun?', ans: 'Agar jika satu akun bocor, akun lainnya tetap aman terlindungi', opts: ['Agar jika satu akun bocor, akun lainnya tetap aman terlindungi', 'Supaya cepat lupa semua akun', 'Karena komputer tidak mengizinkannya', 'Agar teman bisa ikut login'] },
+          { q: 'Saat mengunduh aplikasi atau game baru di HP, langkah aman yang tepat adalah...', ans: 'Meminta izin orang tua dan mengunduh hanya dari toko aplikasi resmi', opts: ['Meminta izin orang tua dan mengunduh hanya dari toko aplikasi resmi', 'Klik tautan sembarang dari iklan pop-up', 'Mematikan semua pengaman perangkat', 'Mengisi nomor kartu kredit tanpa izin'] }
         ];
-        const q = scenarios[gameState.round % scenarios.length];
+        const q = scenarios[getLevelQuestionIndex(scenarios.length)];
         const opts = shuffleArray(q.opts);
 
         document.getElementById('game-stage').innerHTML = `
